@@ -50,12 +50,14 @@ class CountdownService : Service() {
         }
     }
 
-    fun startNotification() {
+
+    private val NOTIFICATION_ID = 83210 // Choose an ID that uniquely identifies your notification
+    private fun startNotification() {
         Log.d("startNotification", "Starting notification...")
         val notificationChannel = NotificationChannel(
             "CountdownServiceChannel",
             "Countdown Service",
-            NotificationManager.IMPORTANCE_LOW
+            NotificationManager.IMPORTANCE_HIGH
         )
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -67,7 +69,7 @@ class CountdownService : Service() {
             .setSmallIcon(R.mipmap.ic_launcher)
             .build()
 
-        startForeground(1, notification)
+        startForeground(NOTIFICATION_ID, notification)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
