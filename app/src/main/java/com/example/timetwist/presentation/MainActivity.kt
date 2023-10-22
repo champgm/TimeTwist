@@ -35,6 +35,7 @@ import android.os.VibratorManager
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.rememberCoroutineScope
 import com.example.timetwist.service.CountdownService
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -50,23 +51,59 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun WearApp(greetingName: String, context: Context) {
     TimeTwistTheme {
-        val maxCounter = 30
-        var counter by remember { mutableStateOf(maxCounter) }
         var started by remember { mutableStateOf(false) }
+        var durationMillis by remember { mutableStateOf(30000L) }
+        var startTime by remember { mutableStateOf(0L) }
+        var currentTime by remember { mutableStateOf(System.currentTimeMillis()) }
+        var elapsedTime by remember { mutableStateOf(currentTime - startTime) }
+        var timeRemaining by remember { mutableStateOf(durationMillis - elapsedTime) }
+        var secondsRemaining by remember { mutableStateOf(durationMillis.toInt()) }
+
+        fun updateTimes() {
+            currentTime = System.currentTimeMillis()
+            elapsedTime = currentTime - startTime
+            timeRemaining = durationMillis - elapsedTime
+            secondsRemaining = (timeRemaining / 1000L).toInt()
+            // Log.e("updateTimes", "===========================")
+            // Log.e("updateTimes", "startTime: $startTime")
+            // Log.e("updateTimes", "currentTime: $currentTime")
+            // Log.e("updateTimes", "elapsedTime: $elapsedTime")
+            // Log.e("updateTimes", "timeRemaining: $timeRemaining")
+            // Log.e("updateTimes", "secondsDisplay: $secondsDisplay")
+            // Log.e("updateTimes", "===========================")
+        }
+
 
         LaunchedEffect(started) {
+            updateTimes()
             while (started) {
-                if (counter > 0) {
-                    delay(1000)  // Wait for 1 second
-                    counter -= 1 // Decrement counter
-//                    Log.e("Counter", "count is $counter")
-                } else {
-                    counter = maxCounter  // Reset the counter
-                    started = false
+                updateTimes()
+                // Log.e("DisplayLoop", "secondsDisplay: $secondsDisplay, $timeRemaining")
+                if (timeRemaining <= 0L) {
+                    started = false  // Wait for 1 second
                 }
+                delay(1000L)
             }
         }
 
+        fun toggleService(coroutineScope: CoroutineScope) {
+            started = !started
+            if (started) {
+                Log.e("TimeTwist::UI", "Starting service...")
+                startTime = System.currentTimeMillis()
+                coroutineScope.launch {
+                    val intent = Intent(context, CountdownService::class.java)
+                    updateTimes()
+                    intent.putExtra("startTime", startTime)
+                    intent.putExtra("durationMillis", durationMillis)
+                    context.startService(intent)
+                }
+            } else {
+                Log.e("TimeTwist::UI", "Stopping service...")
+                val intent = Intent(context, CountdownService::class.java)
+                context.stopService(intent)
+            }
+        }
 
         Column(
             modifier = Modifier
@@ -75,26 +112,10 @@ fun WearApp(greetingName: String, context: Context) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(textAlign = TextAlign.Center, text = "counter value: $counter")
+            val secondsDisplay = if (started) secondsRemaining else (durationMillis / 1000)
+            Text(textAlign = TextAlign.Center, text = "secondsDisplay: $secondsDisplay")
             val coroutineScope = rememberCoroutineScope()
-            Button(
-                onClick = {
-                    started = !started
-                    if (started) {
-                        Log.e("Button", "Starting service...")
-                        coroutineScope.launch {
-                            // Start your foreground service here
-                            val intent = Intent(context, CountdownService::class.java)
-                            intent.putExtra("durationMillis", 30000L) // 5 seconds
-                            context.startService(intent)
-                        }
-                    } else {
-                        // Stop the service?
-                        Log.e("Button", "Stopping service...")
-                        val intent = Intent(context, CountdownService::class.java)
-                        context.stopService(intent)
-                    }
-                }) {
+            Button(onClick = { toggleService(coroutineScope) }) {
                 Text(text = "button")
             }
         }
