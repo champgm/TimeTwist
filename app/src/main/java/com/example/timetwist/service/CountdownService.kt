@@ -121,9 +121,9 @@ class CountdownService : Service() {
         Log.d("onStartCommand", "Starting coroutine...")
         CoroutineScope(Dispatchers.IO).launch {
             val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-            val wakeLock: PowerManager.WakeLock =
+            var wakeLock: PowerManager.WakeLock =
                 powerManager.newWakeLock(
-                    PowerManager.PARTIAL_WAKE_LOCK,
+                    PowerManager.PARTIAL_WAKE_LOCK or PowerManager.ON_AFTER_RELEASE,
                     "TimeTwist::CountdownService"
                 )
 
@@ -144,7 +144,6 @@ class CountdownService : Service() {
                 }
 
                 // Time has elapsed
-                if (!wakeLock.isHeld) wakeLock.acquire(durationMillis)
                 vibrateDevice(this@CountdownService, durationMillis, 0)
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
