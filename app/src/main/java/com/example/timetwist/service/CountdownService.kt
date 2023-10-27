@@ -110,12 +110,12 @@ class CountdownService : Service() {
             currentTime = System.currentTimeMillis()
             elapsedTime = currentTime - startTime
             timeRemaining = durationMillis - elapsedTime
-            Log.e("updateTimes", "===========================")
-            Log.e("updateTimes", "startTime: $startTime")
-            Log.e("updateTimes", "currentTime: $currentTime")
-            Log.e("updateTimes", "elapsedTime: $elapsedTime")
-            Log.e("updateTimes", "timeRemaining: $timeRemaining")
-            Log.e("updateTimes", "===========================")
+//            Log.e("updateTimes", "===========================")
+//            Log.e("updateTimes", "startTime: $startTime")
+//            Log.e("updateTimes", "currentTime: $currentTime")
+//            Log.e("updateTimes", "elapsedTime: $elapsedTime")
+//            Log.e("updateTimes", "timeRemaining: $timeRemaining")
+//            Log.e("updateTimes", "===========================")
         }
 
         Log.d("onStartCommand", "Starting coroutine...")
