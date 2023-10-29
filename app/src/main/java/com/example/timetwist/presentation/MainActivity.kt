@@ -50,16 +50,11 @@ class TimerViewModel : ViewModel() {
         val currentTime = System.currentTimeMillis()
         val elapsedTime = currentTime - timer.value.startTime
         val timeRemaining = timer.value.durationMillis - elapsedTime
-        val secondsRemaining = if (timer.value.started) (timeRemaining / 1000L).toInt() else (timer.value.durationMillis / 1000).toInt()
 
         timer.value = timer.value.copy(
             elapsedTime = elapsedTime,
             timeRemaining = timeRemaining,
-            secondsRemaining = secondsRemaining
         )
-        Log.e("TimeTwist::updateTimer", "Timer updated, timer.value.elapsedTime = ${timer.value.elapsedTime}")
-        Log.e("TimeTwist::updateTimer", "Timer updated, timer.value.timeRemaining = ${timer.value.timeRemaining}")
-        Log.e("TimeTwist::updateTimer", "Timer updated, timer.value.secondsRemaining = ${timer.value.secondsRemaining}")
     }
 
     fun stopTimer(timer: MutableState<TimeDetails>) {
@@ -68,12 +63,6 @@ class TimerViewModel : ViewModel() {
         )
     }
 
-//    fun startTimer(timer: MutableState<TimeDetails>) {
-//        timer.value = timer.value.copy(
-//            started = true
-//        )
-//    }
-
     fun toggleTimer(timer: MutableState<TimeDetails>) {
         timer.value = timer.value.copy(
             startTime = System.currentTimeMillis(),
@@ -81,6 +70,15 @@ class TimerViewModel : ViewModel() {
         )
         if (timer.value.started) {
             updateTimer(timer)
+        }
+    }
+
+    fun updateTimerDuration(id: String, newDurationMillis: Long) {
+        when (id) {
+            "timer0" -> timer0.value = timer0.value.copy(durationMillis = newDurationMillis)
+            "timer1" -> timer1.value = timer1.value.copy(durationMillis = newDurationMillis)
+            "timer2" -> timer2.value = timer2.value.copy(durationMillis = newDurationMillis)
+            else -> throw IllegalArgumentException("Invalid timerId")
         }
     }
 }
@@ -96,7 +94,7 @@ class MainActivity : ComponentActivity() {
                 }
                 composable("edit/{timerId}") { backStackEntry ->
                     val timerId = backStackEntry.arguments?.getString("timerId")
-                    EditScreen(timerId)
+                    EditScreen(timerId, navController)
                 }
             }
         }
@@ -195,10 +193,10 @@ fun WearApp(context: Context, navController: NavController) {
                         backgroundColor = if (inEditMode) Color.Gray else MaterialTheme.colors.primary
                     )
                 ) {
-                    val secondsDisplay =
-                        if (timerViewModel.timer0.value.started) timerViewModel.timer0.value.secondsRemaining
-                        else (timerViewModel.timer0.value.durationMillis / 1000)
-                    Text(text = "$secondsDisplay")
+                    val remaining =
+                        if (timerViewModel.timer0.value.started) timerViewModel.timer0.value.timeRemaining
+                        else (timerViewModel.timer0.value.durationMillis)
+                    Text(text = "${remaining.getTime()}")
                 }
             }
             Row( // 2
@@ -220,10 +218,10 @@ fun WearApp(context: Context, navController: NavController) {
                         backgroundColor = if (inEditMode) Color.Gray else MaterialTheme.colors.primary
                     )
                 ) {
-                    val secondsDisplay =
-                        if (timerViewModel.timer1.value.started) timerViewModel.timer1.value.secondsRemaining
-                        else (timerViewModel.timer1.value.durationMillis / 1000)
-                    Text(text = "$secondsDisplay")
+                    val remaining =
+                        if (timerViewModel.timer1.value.started) timerViewModel.timer1.value.timeRemaining
+                        else (timerViewModel.timer1.value.durationMillis)
+                    Text(text = "${remaining.getTime()}")
                 }
                 Button(
                     onClick = {
@@ -240,10 +238,10 @@ fun WearApp(context: Context, navController: NavController) {
                         backgroundColor = if (inEditMode) Color.Gray else MaterialTheme.colors.primary
                     )
                 ) {
-                    val secondsDisplay =
-                        if (timerViewModel.timer2.value.started) timerViewModel.timer2.value.secondsRemaining
-                        else (timerViewModel.timer2.value.durationMillis / 1000)
-                    Text(text = "$secondsDisplay")
+                    val remaining =
+                        if (timerViewModel.timer2.value.started) timerViewModel.timer2.value.timeRemaining
+                        else (timerViewModel.timer2.value.durationMillis)
+                    Text(text = "${remaining.getTime()}")
                 }
             }
         }

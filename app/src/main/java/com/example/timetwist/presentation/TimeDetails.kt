@@ -5,7 +5,7 @@ data class TimeDetails(
     var startTime: Long = 1,
     var elapsedTime: Long = 1,
     var timeRemaining: Long = 1,
-    var secondsRemaining: Int = 1,
+//    var secondsRemaining: Int = 1,
     var started: Boolean = false,
 ) {
 
