@@ -42,7 +42,7 @@ fun CircularSlider(
     onValueChanged: (Long) -> Unit
 ) {
     val draggerDp = 16.dp
-    val draggerPosition = remember { mutableStateOf(valueToPosition(originalValue)) }
+    val draggerPosition = remember { mutableStateOf(Offset(0f, 0f)) }
     val center = remember { mutableStateOf(Offset(0f, 0f)) }
 
     Box(
