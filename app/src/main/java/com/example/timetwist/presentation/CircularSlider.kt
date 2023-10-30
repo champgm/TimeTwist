@@ -34,18 +34,23 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-fun valueToPosition(value: Long, center: Offset, radius: Float): Offset {
+fun timeValueToPosition(
+    timeValue: Long,
+    center: Offset,
+    trackRadius: Float,
+    draggerRadius: Float
+): IntOffset {
     // Scale back to [0, 2π] range
-    val angle = ((value.toDouble() / 60.0) * 2 * Math.PI)
+    val angle = ((timeValue.toDouble() / 60.0) * 2 * Math.PI)
 
     // Rotate by -π/2 to orient like a clock
     val adjustedAngle = angle - (Math.PI / 2.0)
 
     // Compute the x and y coordinates
-    val x = center.x + radius * cos(adjustedAngle)
-    val y = center.y + radius * sin(adjustedAngle)
+    val x = center.x + trackRadius * cos(adjustedAngle)
+    val y = center.y + trackRadius * sin(adjustedAngle)
 
-    return Offset(x.toFloat(), y.toFloat())
+    return IntOffset(x.toInt(), y.toInt())
 }
 
 data class DraggerState(
@@ -66,15 +71,20 @@ fun CircularSlider(
 ) {
     val isInitialPositionSet = remember { mutableStateOf(false) }
     val center = remember { mutableStateOf(Offset(0f, 0f)) }
-    val bounds = remember { mutableStateOf(Offset(0f, 0f)) }
-    val radius = remember { mutableFloatStateOf(0f) }
-    val draggerDp = 16.dp
+    val bounds = remember { mutableStateOf(IntSize(0, 0)) }
+    val trackRadius = remember { mutableFloatStateOf(0f) }
+    val draggerRadiusDp = 16.dp
+    var draggerRadiusPx = 0f
     val draggerState = remember { mutableStateOf(DraggerState()) }
 
     Box( // The circle around the edge of the screen
         modifier = Modifier
             .fillMaxSize()
+            .onGloballyPositioned {
+                bounds.value = it.size
+            }
             .layout { measurable, constraints ->
+                draggerRadiusPx = draggerRadiusDp.toPx()
                 val placeable = measurable.measure(constraints)
                 layout(placeable.width, placeable.height) {
                     placeable.placeRelative(0, 0)
@@ -83,16 +93,18 @@ fun CircularSlider(
             }
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            bounds.value = Offset(size.width / 2f, size.height / 2f)
+            trackRadius.value = (size.width / 2) - draggerRadiusPx// / 2)
             if (!isInitialPositionSet.value) {
-                draggerState.value.setOffset(IntOffset(size.width.toInt() / 2, size.height.toInt() / 2))
-//                draggerPosition.value = valueToPosition(originalValue, center.value, ((size.width / 2f) - (draggerDp.toPx() / 2)))
+                val onCircleOffset = timeValueToPosition(
+                    originalValue, center.value, trackRadius.value, draggerRadiusPx
+                )
+                val draggerOffset = IntOffset((onCircleOffset.x - draggerRadiusPx).toInt(), (onCircleOffset.y - draggerRadiusPx).toInt())
+                draggerState.value.setOffset(draggerOffset)
                 isInitialPositionSet.value = true
             }
-            radius.value = (size.width / 2) - (draggerDp.toPx() / 2)
             drawCircle(
                 center = Offset(size.width / 2, size.height / 2),
-                radius = radius.value,
+                radius = trackRadius.value,
                 color = Color.Gray,
                 style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
             )
@@ -109,8 +121,8 @@ fun CircularSlider(
                 draggerState.value.containerSize = it.size
             }
     ) {
-        val boxSize = (draggerDp * 2) + 2.dp
-        Box(
+        val boxSize = (draggerRadiusDp * 2) + 2.dp
+        Box( // I don't remember why this is in 2 boxes.
             modifier = Modifier
                 .size(boxSize)
                 .offset { draggerState.value.offset.value }
@@ -118,15 +130,30 @@ fun CircularSlider(
                 .onGloballyPositioned { draggerState.value.contentSize = it.size }
                 .pointerInput(Unit) {
                     detectDragGestures { _, dragAmount ->
-                        Log.e("CirclePointerInput", "caught drag, amount: ${dragAmount}")
                         val calculatedX = draggerState.value.offset.value.x + dragAmount.x.roundToInt()
                         val calculatedY = draggerState.value.offset.value.y + dragAmount.y.roundToInt()
-                        draggerState.value.setOffset(IntOffset(calculatedX, calculatedY))
+
+                        val originalAngle = atan2(calculatedX.toDouble(), calculatedY.toDouble())
+
+                        // Rotate by +π to make the 0 value appear at the top (like a clock)
+                        val adjustedAngle = originalAngle + (Math.PI / 2)
+
+                        // Normalize angle (currently at [-π, π] range) to [0, 2π] range
+                        val normalizedAngle = if (adjustedAngle < 0) adjustedAngle + 2 * Math.PI else adjustedAngle
+
+                        // Scale the angle to [0, 59] range (to represent minutes/seconds)
+                        val scaledValue = ((normalizedAngle / (2 * Math.PI)) * 60).toLong()
+                        onValueChanged(scaledValue)
+
+                        val x = bounds.value.width + trackRadius.value * cos(originalAngle)
+                        val y = bounds.value.height + trackRadius.value * sin(originalAngle)
+
+                        draggerState.value.setOffset(IntOffset(x.toInt(), y.toInt()))
                     }
                 }
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                drawCircle(radius = draggerDp.toPx(), color = Color.Blue)
+                drawCircle(radius = draggerRadiusPx, color = Color.Blue)
             }
         }
     }
