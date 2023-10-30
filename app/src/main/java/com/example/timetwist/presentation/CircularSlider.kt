@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import android.util.Log
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -63,12 +64,12 @@ fun CircularSlider(
     originalValue: Long,
     onValueChanged: (Long) -> Unit
 ) {
-    val draggerDp = 16.dp
-    val draggerPosition = remember { mutableStateOf(Offset(0f, 0f)) }
     val isInitialPositionSet = remember { mutableStateOf(false) }
     val center = remember { mutableStateOf(Offset(0f, 0f)) }
     val bounds = remember { mutableStateOf(Offset(0f, 0f)) }
     val radius = remember { mutableFloatStateOf(0f) }
+    val draggerDp = 16.dp
+    val draggerState = remember { mutableStateOf(DraggerState()) }
 
     Box( // The circle around the edge of the screen
         modifier = Modifier
@@ -84,7 +85,8 @@ fun CircularSlider(
         Canvas(modifier = Modifier.fillMaxSize()) {
             bounds.value = Offset(size.width / 2f, size.height / 2f)
             if (!isInitialPositionSet.value) {
-                draggerPosition.value = valueToPosition(originalValue, center.value, ((size.width / 2f) - (draggerDp.toPx() / 2)))
+                draggerState.value.setOffset(IntOffset(size.width.toInt() / 2, size.height.toInt() / 2))
+//                draggerPosition.value = valueToPosition(originalValue, center.value, ((size.width / 2f) - (draggerDp.toPx() / 2)))
                 isInitialPositionSet.value = true
             }
             radius.value = (size.width / 2) - (draggerDp.toPx() / 2)
@@ -98,27 +100,28 @@ fun CircularSlider(
     }
 
 
-    val state = remember { mutableStateOf(DraggerState()) }
     Box(
         modifier = Modifier
-            .offset { state.value.offset.value }
             .fillMaxSize()
+            .border(2.dp, Color.Magenta)
             .onGloballyPositioned {
                 Log.e("CirclePointerInput", "onGloballyPositioned, size is: ${it.size}")
-                state.value.containerSize = it.size
+                draggerState.value.containerSize = it.size
             }
     ) {
+        val boxSize = (draggerDp * 2) + 2.dp
         Box(
             modifier = Modifier
-                .offset { state.value.offset.value }
-                .onGloballyPositioned { state.value.contentSize = it.size }
+                .size(boxSize)
+                .offset { draggerState.value.offset.value }
+                .border(2.dp, Color.Magenta)
+                .onGloballyPositioned { draggerState.value.contentSize = it.size }
                 .pointerInput(Unit) {
                     detectDragGestures { _, dragAmount ->
-                        android.util.Log.e("CirclePointerInput", "caught drag, amount: ${dragAmount}")
-                        val calculatedX = state.value.offset.value.x + dragAmount.x.roundToInt()
-                        val calculatedY = state.value.offset.value.y + dragAmount.y.roundToInt()
-//                        state.value.offset = androidx.compose.ui.unit.IntOffset(calculatedX, calculatedY)
-                        state.value.setOffset(IntOffset(calculatedX, calculatedY))
+                        Log.e("CirclePointerInput", "caught drag, amount: ${dragAmount}")
+                        val calculatedX = draggerState.value.offset.value.x + dragAmount.x.roundToInt()
+                        val calculatedY = draggerState.value.offset.value.y + dragAmount.y.roundToInt()
+                        draggerState.value.setOffset(IntOffset(calculatedX, calculatedY))
                     }
                 }
         ) {
