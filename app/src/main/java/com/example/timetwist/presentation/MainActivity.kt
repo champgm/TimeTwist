@@ -39,50 +39,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 
 
-class TimerViewModel : ViewModel() {
-    // MutableState for timer0, timer1, and timer2
-    var timer0: MutableState<TimeDetails> = mutableStateOf(TimeDetails(30000L))
-    var timer1: MutableState<TimeDetails> = mutableStateOf(TimeDetails(300000L))
-    var timer2: MutableState<TimeDetails> = mutableStateOf(TimeDetails(60000L))
-
-    // Functions to modify timers
-    fun updateTimer(timer: MutableState<TimeDetails>) {
-        val currentTime = System.currentTimeMillis()
-        val elapsedTime = currentTime - timer.value.startTime
-        val timeRemaining = timer.value.durationMillis - elapsedTime
-
-        timer.value = timer.value.copy(
-            elapsedTime = elapsedTime,
-            timeRemaining = timeRemaining,
-        )
-    }
-
-    fun stopTimer(timer: MutableState<TimeDetails>) {
-        timer.value = timer.value.copy(
-            started = false
-        )
-    }
-
-    fun toggleTimer(timer: MutableState<TimeDetails>) {
-        timer.value = timer.value.copy(
-            startTime = System.currentTimeMillis(),
-            started = !timer.value.started
-        )
-        if (timer.value.started) {
-            updateTimer(timer)
-        }
-    }
-
-    fun updateTimerDuration(id: String, newDurationMillis: Long) {
-        when (id) {
-            "timer0" -> timer0.value = timer0.value.copy(durationMillis = newDurationMillis)
-            "timer1" -> timer1.value = timer1.value.copy(durationMillis = newDurationMillis)
-            "timer2" -> timer2.value = timer2.value.copy(durationMillis = newDurationMillis)
-            else -> throw IllegalArgumentException("Invalid timerId")
-        }
-    }
-}
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,21 +66,17 @@ fun WearApp(context: Context, navController: NavController) {
 
         LaunchedEffect(Unit) { // key is Unit to make sure this effect is only launched once
             while (true) {
-                Log.e("TimeTwist::LaunchedEffect", "Updating timers...")
-                timerViewModel.updateTimer(timerViewModel.timer0)
-                timerViewModel.updateTimer(timerViewModel.timer1)
-                timerViewModel.updateTimer(timerViewModel.timer2)
+                if (timerViewModel.timer0.value.started) timerViewModel.updateTimer(timerViewModel.timer0)
+                if (timerViewModel.timer1.value.started) timerViewModel.updateTimer(timerViewModel.timer1)
+                if (timerViewModel.timer2.value.started) timerViewModel.updateTimer(timerViewModel.timer2)
 
                 if (timerViewModel.timer0.value.started && timerViewModel.timer0.value.timeRemaining <= 0L) {
-                    Log.e("TimeTwist::LaunchedEffect", "Stopping timer0")
                     timerViewModel.stopTimer(timerViewModel.timer0)
                 }
                 if (timerViewModel.timer1.value.started && timerViewModel.timer1.value.timeRemaining <= 0L) {
-                    Log.e("TimeTwist::LaunchedEffect", "Stopping timer1")
                     timerViewModel.stopTimer(timerViewModel.timer1)
                 }
                 if (timerViewModel.timer2.value.started && timerViewModel.timer2.value.timeRemaining <= 0L) {
-                    Log.e("TimeTwist::LaunchedEffect", "Stopping timer2")
                     timerViewModel.stopTimer(timerViewModel.timer2)
                 }
                 delay(1000L)
@@ -132,7 +84,6 @@ fun WearApp(context: Context, navController: NavController) {
         }
 
         fun startService(coroutineScope: CoroutineScope, durationMillis: Long) {
-            Log.e("TimeTwist::UI", "Starting service...")
             val startTime = System.currentTimeMillis()
             coroutineScope.launch {
                 val intent = Intent(context, CountdownService::class.java)
@@ -143,7 +94,6 @@ fun WearApp(context: Context, navController: NavController) {
         }
 
         fun toggleService(coroutineScope: CoroutineScope) {
-            Log.e("TimeTwist::UI", "Stopping countdown service if one is running...")
             val intent = Intent(context, CountdownService::class.java)
             context.stopService(intent)
 
