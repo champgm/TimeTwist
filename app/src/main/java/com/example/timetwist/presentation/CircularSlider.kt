@@ -90,7 +90,7 @@ fun positionToRotatedAngle(
     val angle = draggerPositionToAngle(draggerOffset, center, draggerRadius)
 
     // Rotate by +π/2 to adjust for clock-like orientation
-    val rotatedAngle = angle - (Math.PI / 2.0)
+    val rotatedAngle = angle + (Math.PI / 2.0)
 
     return rotatedAngle
 }
@@ -140,21 +140,40 @@ fun CircularSlider(
     originalValue: Double,
     setNewTimeValue: (Double) -> Unit
 ) {
-    val isInitialPositionSet = remember { mutableStateOf(false) }
-    val center = remember { mutableStateOf(DoubleOffset(0.0, 0.0)) }
-    val bounds = remember { mutableStateOf(IntSize(0, 0)) }
-    val trackRadius = remember { mutableDoubleStateOf(0.0) }
     val draggerRadiusDp = 16.dp
     var draggerRadiusPx = 0.0
-    val draggerState = remember { mutableStateOf(DraggerState()) }
+    val bounds = remember { mutableStateOf(IntSize(0, 0)) }
 
-    val positionLineEnd = remember { mutableStateOf(Offset(0f, 0f)) }
-    val angleLineEnd = remember { mutableStateOf(Offset(0f, 0f)) }
+    val centerCalculated = remember { mutableStateOf(false) }
+    val center = remember { mutableStateOf(DoubleOffset(0.0, 0.0)) }
+    val trackRadiusCalculated = remember { mutableStateOf(false) }
+    val trackRadius = remember { mutableDoubleStateOf(0.0) }
+
+    val isInitialPositionSet = remember { mutableStateOf(false) }
+    val draggerState = remember { mutableStateOf(DraggerState()) }
+    val positionLineEnd = remember { mutableStateOf(DoubleOffset(0.0, 0.0)) }
+    val angleLineEnd = remember { mutableStateOf(DoubleOffset(0.0, 0.0)) }
+    val touchLineEnd = remember { mutableStateOf(DoubleOffset(0.0, 0.0)) }
 
     Box( // The circle around the edge of the screen
         modifier = Modifier
             .fillMaxSize()
             .onGloballyPositioned {
+                if (!trackRadiusCalculated.value) {
+                    trackRadius.value = (it.size.width.toDouble() / 2) - draggerRadiusPx
+                    trackRadiusCalculated.value = true
+                }
+                if (!centerCalculated.value) {
+                    center.value = DoubleOffset(it.size.width.toDouble() / 2, it.size.height.toDouble() / 2f)
+                    centerCalculated.value = true
+                }
+                if (!isInitialPositionSet.value) {
+                    val draggerOffset = timeValueToPosition(
+                        originalValue, center.value, trackRadius.value, draggerRadiusPx
+                    )
+                    draggerState.value.setOffset(draggerOffset.x, draggerOffset.y)
+                    isInitialPositionSet.value = true
+                }
                 bounds.value = it.size
             }
             .layout { measurable, constraints ->
@@ -164,27 +183,18 @@ fun CircularSlider(
                 val placeable = measurable.measure(constraints)
                 layout(placeable.width, placeable.height) {
                     placeable.placeRelative(0, 0)
-                    center.value = DoubleOffset(placeable.width.toDouble() / 2, placeable.height.toDouble() / 2f)
                 }
             }
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            trackRadius.value = (size.width.toDouble() / 2) - draggerRadiusPx
-            if (!isInitialPositionSet.value) {
-                val draggerOffset = timeValueToPosition(
-                    originalValue, center.value, trackRadius.value, draggerRadiusPx
-                )
-                draggerState.value.setOffset(draggerOffset.x, draggerOffset.y)
-                isInitialPositionSet.value = true
-            }
             drawCircle(
                 center = Offset(size.width / 2, size.height / 2),
                 radius = trackRadius.value.toFloat(),
                 color = Color.Gray,
                 style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
             )
-            drawLine(color = Color.Magenta, start = center.value.toFloat(), end = positionLineEnd.value)
-            drawLine(color = Color.Blue, start = center.value.toFloat(), end = angleLineEnd.value)
+            drawLine(color = Color.Magenta, start = center.value.toFloat(), end = positionLineEnd.value.toFloat())
+            drawLine(color = Color.Blue, start = center.value.toFloat(), end = angleLineEnd.value.toFloat())
         }
     }
 
@@ -210,13 +220,11 @@ fun CircularSlider(
                     // draggerState.value.contentSize = it.size
                 }
                 .pointerInput(Unit) {
-
                     detectDragGestures { _, dragAmount ->
-
                         val calculatedX = draggerState.value.offset.value.x + dragAmount.x.roundToInt()
                         val calculatedY = draggerState.value.offset.value.y + dragAmount.y.roundToInt()
 //                        draggerState.value.setOffset(DoubleOffset(calculatedX, calculatedY))
-                        positionLineEnd.value = (Offset(calculatedX.toFloat(), calculatedY.toFloat()))
+                        positionLineEnd.value = (DoubleOffset(calculatedX + draggerRadiusPx, calculatedY + draggerRadiusPx))
 
                         val position = DoubleOffset(calculatedX, calculatedY)
                         val rotatedAngle = positionToRotatedAngle(position, center.value, draggerRadiusPx)
@@ -232,8 +240,8 @@ fun CircularSlider(
                             center.value,
                             trackRadius.value,
                         )
-                        val newPosition = DoubleOffset(trackPosition.x-draggerRadiusPx, trackPosition.y-draggerRadiusPx)
-                        angleLineEnd.value = Offset(newPosition.x.toFloat(), newPosition.y.toFloat())
+                        val newPosition = DoubleOffset(trackPosition.x - draggerRadiusPx, trackPosition.y - draggerRadiusPx)
+                        angleLineEnd.value = DoubleOffset(newPosition.x, newPosition.y)
                         draggerState.value.setOffset(DoubleOffset(newPosition.x, newPosition.y))
                     }
                 }

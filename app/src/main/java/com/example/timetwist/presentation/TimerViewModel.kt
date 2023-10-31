@@ -3,6 +3,10 @@ package com.example.timetwist.presentation
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.Job
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class TimerViewModel : ViewModel() {
     // MutableState for timer0, timer1, and timer2
@@ -10,6 +14,27 @@ class TimerViewModel : ViewModel() {
     var timer1: MutableState<TimeDetails> = mutableStateOf(TimeDetails(315000L))
     var timer2: MutableState<TimeDetails> = mutableStateOf(TimeDetails(60000L))
 
+    private var timerJob: Job? = null
+
+    init {
+        startTimers()
+    }
+
+    fun startTimers() {
+        timerJob = viewModelScope.launch {
+            while (true) {
+                listOf(timer0, timer1, timer2).forEach { timer ->
+                    if (timer.value.started) {
+                        updateTimer(timer)
+                        if (timer.value.timeRemaining <= 0L) {
+                            stopTimer(timer)
+                        }
+                    }
+                }
+                delay(1000L)
+            }
+        }
+    }
     // Functions to modify timers
     fun updateTimer(timer: MutableState<TimeDetails>) {
         val currentTime = System.currentTimeMillis()
@@ -45,5 +70,10 @@ class TimerViewModel : ViewModel() {
             "timer2" -> timer2.value = timer2.value.copy(durationMillis = newDurationMillis)
             else -> throw IllegalArgumentException("Invalid timerId")
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        timerJob?.cancel()
     }
 }

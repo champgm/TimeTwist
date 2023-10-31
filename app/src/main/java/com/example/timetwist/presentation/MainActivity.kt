@@ -64,25 +64,6 @@ fun WearApp(context: Context, navController: NavController) {
     TimeTwistTheme {
         var inEditMode by remember { mutableStateOf(true) }
 
-        LaunchedEffect(Unit) { // key is Unit to make sure this effect is only launched once
-            while (true) {
-                if (timerViewModel.timer0.value.started) timerViewModel.updateTimer(timerViewModel.timer0)
-                if (timerViewModel.timer1.value.started) timerViewModel.updateTimer(timerViewModel.timer1)
-                if (timerViewModel.timer2.value.started) timerViewModel.updateTimer(timerViewModel.timer2)
-
-                if (timerViewModel.timer0.value.started && timerViewModel.timer0.value.timeRemaining <= 0L) {
-                    timerViewModel.stopTimer(timerViewModel.timer0)
-                }
-                if (timerViewModel.timer1.value.started && timerViewModel.timer1.value.timeRemaining <= 0L) {
-                    timerViewModel.stopTimer(timerViewModel.timer1)
-                }
-                if (timerViewModel.timer2.value.started && timerViewModel.timer2.value.timeRemaining <= 0L) {
-                    timerViewModel.stopTimer(timerViewModel.timer2)
-                }
-                delay(1000L)
-            }
-        }
-
         fun startService(coroutineScope: CoroutineScope, durationMillis: Long) {
             val startTime = System.currentTimeMillis()
             coroutineScope.launch {
