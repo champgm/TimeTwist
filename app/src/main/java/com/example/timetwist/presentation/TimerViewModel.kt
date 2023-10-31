@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 class TimerViewModel : ViewModel() {
     // MutableState for timer0, timer1, and timer2
     var timer0: MutableState<TimeDetails> = mutableStateOf(TimeDetails(30000L))
-    var timer1: MutableState<TimeDetails> = mutableStateOf(TimeDetails(300000L))
+    var timer1: MutableState<TimeDetails> = mutableStateOf(TimeDetails(315000L))
     var timer2: MutableState<TimeDetails> = mutableStateOf(TimeDetails(60000L))
 
     // Functions to modify timers

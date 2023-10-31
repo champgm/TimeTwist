@@ -42,7 +42,7 @@ class CountdownService : Service() {
             // Create a one-shot vibration effect
             val vibrationEffect = VibrationEffect.createOneShot(1000, myAmplitude)
             vibrator.vibrate(vibrationEffect)
-            Log.d("Vibrate", "Vibration triggered")
+//            Log.d("Vibrate", "Vibration triggered")
         }
     }
 
@@ -54,12 +54,12 @@ class CountdownService : Service() {
             val vibrationEffect = VibrationEffect.createWaveform(myPattern, myAmplitudes, -1)
             vibrator.vibrate(vibrationEffect)
         } else {
-            Log.d("Vibrate", "This device does not support vibration")
+//            Log.d("Vibrate", "This device does not support vibration")
         }
     }
 
     private fun vibrateDevice(context: Context, durationMillis: Long, timeRemaining: Long) {
-        Log.d("Vibrate", "Checking if should vibrate...")
+//        Log.d("Vibrate", "Checking if should vibrate...")
         if (timeRemaining <= 0) {
             bigVibrate(context)
             return
@@ -71,14 +71,14 @@ class CountdownService : Service() {
         var shouldVibrate = secondsLeft > 0 && (secondsLeft % everyXSeconds) == 0L;
         if (!shouldVibrate) return
 
-        Log.d("Vibrate", "Vibrating with $secondsLeft seconds left")
+//        Log.d("Vibrate", "Vibrating with $secondsLeft seconds left")
         smallVibrate(context)
     }
 
 
     private val NOTIFICATION_ID = 83210 // Choose an ID that uniquely identifies your notification
     private fun startNotification() {
-        Log.d("startNotification", "Starting notification...")
+//        Log.d("startNotification", "Starting notification...")
         val notificationChannel = NotificationChannel(
             "CountdownServiceChannel",
             "Countdown Service",
@@ -98,7 +98,7 @@ class CountdownService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d("onStartCommand", "onStartCommand was called")
+//        Log.d("onStartCommand", "onStartCommand was called")
         startNotification()
         durationMillis = intent?.getLongExtra("durationMillis", 0L) ?: 0L
         val startTime = intent?.getLongExtra("startTime", 0L) ?: 0L
@@ -131,7 +131,7 @@ class CountdownService : Service() {
             try {
                 updateTimes()
                 while (timeRemaining > 1000) {
-                    Log.d("onStartCommand", "Time Remaining: ${timeRemaining}ms")
+//                    Log.d("onStartCommand", "Time Remaining: ${timeRemaining}ms")
                     if (timeRemaining <= 60000 && !wakeLock.isHeld) {
                         // The timer is almost up.
                         // Don't let the device put this service to sleep.

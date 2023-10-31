@@ -62,7 +62,7 @@ fun WearApp(context: Context, navController: NavController) {
     val timerViewModel: TimerViewModel = viewModel()
 
     TimeTwistTheme {
-        var inEditMode by remember { mutableStateOf(false) }
+        var inEditMode by remember { mutableStateOf(true) }
 
         LaunchedEffect(Unit) { // key is Unit to make sure this effect is only launched once
             while (true) {

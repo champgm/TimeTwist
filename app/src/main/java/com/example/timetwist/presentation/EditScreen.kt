@@ -42,7 +42,7 @@ fun EditScreen(timerId: String?, navController: NavController) {
     var seconds by remember { mutableLongStateOf(((timer.durationMillis % 60000L) / 1000L)) }
 
     // The state for focused field
-    var focusedField by remember { mutableStateOf(FocusedField.NONE) }
+    var focusedField by remember { mutableStateOf(FocusedField.SECONDS) }
 
     Column(
         modifier = Modifier
@@ -94,12 +94,12 @@ fun EditScreen(timerId: String?, navController: NavController) {
     }
 
     if (focusedField == FocusedField.SECONDS) {
-        CircularSlider(seconds) { newValue ->
-            seconds = newValue
+        CircularSlider(seconds.toDouble()) { newValue ->
+            seconds = newValue.toLong()
         }
     } else if (focusedField == FocusedField.MINUTES) {
-        CircularSlider(minutes) { newValue ->
-            minutes = newValue
+        CircularSlider(minutes.toDouble()) { newValue ->
+            minutes = newValue.toLong()
         }
     }
 }
