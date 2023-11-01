@@ -1,10 +1,14 @@
 package com.example.timetwist.presentation
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.Job
 import androidx.lifecycle.viewModelScope
+import com.example.timetwist.service.CountdownService
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -20,7 +24,7 @@ class TimerViewModel : ViewModel() {
         startTimers()
     }
 
-    fun startTimers() {
+    private fun startTimers() {
         timerJob = viewModelScope.launch {
             while (true) {
                 listOf(timer0, timer1, timer2).forEach { timer ->
@@ -35,8 +39,9 @@ class TimerViewModel : ViewModel() {
             }
         }
     }
+
     // Functions to modify timers
-    fun updateTimer(timer: MutableState<TimeDetails>) {
+    private fun updateTimer(timer: MutableState<TimeDetails>) {
         val currentTime = System.currentTimeMillis()
         val elapsedTime = currentTime - timer.value.startTime
         val timeRemaining = timer.value.durationMillis - elapsedTime
@@ -47,7 +52,7 @@ class TimerViewModel : ViewModel() {
         )
     }
 
-    fun stopTimer(timer: MutableState<TimeDetails>) {
+    private fun stopTimer(timer: MutableState<TimeDetails>) {
         timer.value = timer.value.copy(
             started = false
         )
@@ -75,5 +80,53 @@ class TimerViewModel : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         timerJob?.cancel()
+    }
+
+    fun startTimerStopOthers(startId: String) {
+        val timers = listOf("timer0", "timer1", "timer2")
+        timers.forEach { timerId ->
+            if (startId == timerId) {
+                toggleTimer(
+                    when (timerId) {
+                        "timer0" -> timer0
+                        "timer1" -> timer1
+                        "timer2" -> timer2
+                        else -> throw IllegalArgumentException("Invalid timerId")
+                    }
+                )
+            } else {
+                stopTimer(
+                    when (timerId) {
+                        "timer0" -> timer0
+                        "timer1" -> timer1
+                        "timer2" -> timer2
+                        else -> throw IllegalArgumentException("Invalid timerId")
+                    }
+                )
+            }
+        }
+    }
+
+    private fun startService(context: Context, coroutineScope: CoroutineScope, durationMillis: Long) {
+        val startTime = System.currentTimeMillis()
+        coroutineScope.launch {
+            val intent = Intent(context, CountdownService::class.java)
+            intent.putExtra("startTime", startTime)
+            intent.putExtra("durationMillis", durationMillis)
+            context.startService(intent)
+        }
+    }
+
+    fun toggleService(context: Context, coroutineScope: CoroutineScope) {
+        val intent = Intent(context, CountdownService::class.java)
+        context.stopService(intent)
+
+        if (timer0.value.started) {
+            startService(context, coroutineScope, timer0.value.durationMillis)
+        } else if (timer1.value.started) {
+            startService(context, coroutineScope, timer1.value.durationMillis)
+        } else if (timer2.value.started) {
+            startService(context, coroutineScope, timer2.value.durationMillis)
+        }
     }
 }

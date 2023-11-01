@@ -64,29 +64,6 @@ fun WearApp(context: Context, navController: NavController) {
     TimeTwistTheme {
         var inEditMode by remember { mutableStateOf(true) }
 
-        fun startService(coroutineScope: CoroutineScope, durationMillis: Long) {
-            val startTime = System.currentTimeMillis()
-            coroutineScope.launch {
-                val intent = Intent(context, CountdownService::class.java)
-                intent.putExtra("startTime", startTime)
-                intent.putExtra("durationMillis", durationMillis)
-                context.startService(intent)
-            }
-        }
-
-        fun toggleService(coroutineScope: CoroutineScope) {
-            val intent = Intent(context, CountdownService::class.java)
-            context.stopService(intent)
-
-            if (timerViewModel.timer0.value.started) {
-                startService(coroutineScope, timerViewModel.timer0.value.durationMillis)
-            } else if (timerViewModel.timer1.value.started) {
-                startService(coroutineScope, timerViewModel.timer1.value.durationMillis)
-            } else if (timerViewModel.timer2.value.started) {
-                startService(coroutineScope, timerViewModel.timer2.value.durationMillis)
-            }
-        }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -114,10 +91,8 @@ fun WearApp(context: Context, navController: NavController) {
                         if (inEditMode) {
                             navController.navigate("edit/timer0")
                         } else {
-                            timerViewModel.toggleTimer(timerViewModel.timer0)
-                            timerViewModel.stopTimer(timerViewModel.timer1)
-                            timerViewModel.stopTimer(timerViewModel.timer2)
-                            toggleService(coroutineScope)
+                            timerViewModel.startTimerStopOthers("timer0")
+                            timerViewModel.toggleService(context,coroutineScope)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -139,10 +114,8 @@ fun WearApp(context: Context, navController: NavController) {
                         if (inEditMode) {
                             navController.navigate("edit/timer1")
                         } else {
-                            timerViewModel.stopTimer(timerViewModel.timer0)
-                            timerViewModel.toggleTimer(timerViewModel.timer1)
-                            timerViewModel.stopTimer(timerViewModel.timer2)
-                            toggleService(coroutineScope)
+                            timerViewModel.startTimerStopOthers("timer1")
+                            timerViewModel.toggleService(context,coroutineScope)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -159,10 +132,8 @@ fun WearApp(context: Context, navController: NavController) {
                         if (inEditMode) {
                             navController.navigate("edit/timer2")
                         } else {
-                            timerViewModel.stopTimer(timerViewModel.timer0)
-                            timerViewModel.stopTimer(timerViewModel.timer1)
-                            timerViewModel.toggleTimer(timerViewModel.timer2)
-                            toggleService(coroutineScope)
+                            timerViewModel.startTimerStopOthers("timer2")
+                            timerViewModel.toggleService(context,coroutineScope)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
