@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 
 class TimerViewModel : ViewModel() {
     // MutableState for timer0, timer1, and timer2
-    var timer0: MutableState<TimeDetails> = mutableStateOf(TimeDetails(durationMillis = 30000L, repeating = true))
+    var timer0: MutableState<TimeDetails> = mutableStateOf(TimeDetails(durationMillis = 5000L, repeating = true))
     var timer1: MutableState<TimeDetails> = mutableStateOf(TimeDetails(durationMillis = 315000L))
     var timer2: MutableState<TimeDetails> = mutableStateOf(TimeDetails(durationMillis = 60000L))
 
@@ -33,6 +33,9 @@ class TimerViewModel : ViewModel() {
                         updateTimer(timer)
                         if (timer.value.timeRemaining <= 0L) {
                             stopTimer(timer)
+                            if (timer.value.repeating) {
+                                toggleTimer(timer)
+                            }
                         }
                     }
                 }
