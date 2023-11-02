@@ -2,6 +2,7 @@ package com.example.timetwist.presentation
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -14,9 +15,9 @@ import kotlinx.coroutines.launch
 
 class TimerViewModel : ViewModel() {
     // MutableState for timer0, timer1, and timer2
-    var timer0: MutableState<TimeDetails> = mutableStateOf(TimeDetails(30000L))
-    var timer1: MutableState<TimeDetails> = mutableStateOf(TimeDetails(315000L))
-    var timer2: MutableState<TimeDetails> = mutableStateOf(TimeDetails(60000L))
+    var timer0: MutableState<TimeDetails> = mutableStateOf(TimeDetails(durationMillis = 30000L, repeating = true))
+    var timer1: MutableState<TimeDetails> = mutableStateOf(TimeDetails(durationMillis = 315000L))
+    var timer2: MutableState<TimeDetails> = mutableStateOf(TimeDetails(durationMillis = 60000L))
 
     private var timerJob: Job? = null
 
@@ -40,6 +41,16 @@ class TimerViewModel : ViewModel() {
         }
     }
 
+    fun stopTimers(context: Context) {
+        val intent = Intent(context, CountdownService::class.java)
+        context.stopService(intent)
+        listOf(timer0, timer1, timer2).forEach { timer ->
+            if (timer.value.started) {
+                stopTimer(timer)
+            }
+        }
+    }
+
     // Functions to modify timers
     private fun updateTimer(timer: MutableState<TimeDetails>) {
         val currentTime = System.currentTimeMillis()
@@ -58,6 +69,17 @@ class TimerViewModel : ViewModel() {
         )
     }
 
+    fun stopTimer(timerId: String) {
+        stopTimer(
+            when (timerId) {
+                "timer0" -> timer0
+                "timer1" -> timer1
+                "timer2" -> timer2
+                else -> throw IllegalArgumentException("Invalid timerId")
+            }
+        )
+    }
+
     fun toggleTimer(timer: MutableState<TimeDetails>) {
         timer.value = timer.value.copy(
             startTime = System.currentTimeMillis(),
@@ -68,11 +90,12 @@ class TimerViewModel : ViewModel() {
         }
     }
 
-    fun updateTimerDuration(id: String, newDurationMillis: Long) {
+    fun updateTimerDuration(id: String, newDurationMillis: Long, newRepeating: Boolean) {
+        Log.e("viewmodel", "Updating timer with id: ${id}")
         when (id) {
-            "timer0" -> timer0.value = timer0.value.copy(durationMillis = newDurationMillis)
-            "timer1" -> timer1.value = timer1.value.copy(durationMillis = newDurationMillis)
-            "timer2" -> timer2.value = timer2.value.copy(durationMillis = newDurationMillis)
+            "timer0" -> timer0.value = timer0.value.copy(durationMillis = newDurationMillis, repeating = newRepeating)
+            "timer1" -> timer1.value = timer1.value.copy(durationMillis = newDurationMillis, repeating = newRepeating)
+            "timer2" -> timer2.value = timer2.value.copy(durationMillis = newDurationMillis, repeating = newRepeating)
             else -> throw IllegalArgumentException("Invalid timerId")
         }
     }

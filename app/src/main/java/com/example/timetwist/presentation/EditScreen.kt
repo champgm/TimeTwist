@@ -1,5 +1,6 @@
 package com.example.timetwist.presentation
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,10 +9,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -25,9 +29,8 @@ import androidx.wear.compose.material.Text
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun EditScreen(timerId: String?, navController: NavController) {
+fun EditScreen(timerId: String?, navController: NavController, timerViewModel: TimerViewModel) {
     val fontSize = 20.sp;
-    val timerViewModel: TimerViewModel = viewModel()
 
     // Get the timer based on timerId to edit. For now, just assuming timer0
     val timer = when (timerId) {
@@ -36,10 +39,19 @@ fun EditScreen(timerId: String?, navController: NavController) {
         "timer2" -> timerViewModel.timer2.value
         else -> throw IllegalArgumentException("Invalid timerId")
     }
+    val trackColor = when (timerId) {
+        "timer0" -> googleRed
+        "timer1" -> googleGreen
+        "timer2" -> googleBlue
+        else -> throw IllegalArgumentException("Invalid timerId")
+    }
 
     // The state for the minutes and seconds text fields
     var minutes by remember { mutableLongStateOf((timer.durationMillis / 60000L)) }
+    val minutesString = if (minutes < 10) "0$minutes" else "$minutes"
     var seconds by remember { mutableLongStateOf(((timer.durationMillis % 60000L) / 1000L)) }
+    val secondsString = if (seconds < 10) "0$seconds" else "$seconds"
+    var repeating by remember { mutableStateOf(timer.repeating) }
 
     // The state for focused field
     var focusedField by remember { mutableStateOf(FocusedField.SECONDS) }
@@ -49,13 +61,27 @@ fun EditScreen(timerId: String?, navController: NavController) {
             .fillMaxSize()
             .background(MaterialTheme.colors.background),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top,
     ) {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Top,
         ) {
-            Text("Edit Timer", fontSize = fontSize, fontWeight = FontWeight.Bold)
+            Button(
+                onClick = {
+                    repeating = !repeating
+                },
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color.Black),
+                modifier = Modifier
+                    .padding(
+                        top = 24.dp,
+                        bottom = 4.dp
+                    )
+                    .size(36.dp)
+
+            ) {
+                Text(text = "↻", color = if (repeating) Color.Green else Color.White, fontSize = 24.sp)
+            }
         }
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -64,19 +90,25 @@ fun EditScreen(timerId: String?, navController: NavController) {
             Box(
                 modifier = Modifier
                     .clickable { focusedField = FocusedField.MINUTES }
-                    .background(if (focusedField == FocusedField.MINUTES) Color.Gray else Color.Transparent)
-                    .padding(16.dp)
+                    .background(
+                        color = if (focusedField == FocusedField.MINUTES) Color.DarkGray else Color.Transparent,
+                        shape = RoundedCornerShape(24.dp),
+                    )
+                    .padding(12.dp)
             ) {
-                Text("$minutes", fontSize = fontSize)
+                Text("$minutesString", fontSize = fontSize)
             }
-            Text(":", fontSize = 20.sp)
+            Text(" ∶ ", fontSize = 20.sp)
             Box(
                 modifier = Modifier
                     .clickable { focusedField = FocusedField.SECONDS }
-                    .background(if (focusedField == FocusedField.SECONDS) Color.Gray else Color.Transparent)
-                    .padding(16.dp)
+                    .background(
+                        color = if (focusedField == FocusedField.SECONDS) Color.DarkGray else Color.Transparent,
+                        shape = RoundedCornerShape(24.dp),
+                    )
+                    .padding(12.dp)
             ) {
-                Text("$seconds", fontSize = fontSize)
+                Text("$secondsString", fontSize = fontSize)
             }
         }
 
@@ -85,20 +117,55 @@ fun EditScreen(timerId: String?, navController: NavController) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Button(
-                onClick = { navController.popBackStack() },
-                colors = ButtonDefaults.buttonColors(backgroundColor = Color.Gray)
+                onClick = {
+                    navController.popBackStack()
+                },
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color.Gray),
+                shape = RoundedCornerShape(0.dp),
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 24.dp,
+                            bottomStart = 24.dp,
+                            topEnd = 0.dp,
+                            bottomEnd = 0.dp,
+                        )
+                    )
+
             ) {
-                Text(text = "Done")
+                Text(text = "✗", color = Color.Black)
+            }
+            Button(
+                onClick = {
+                    val newDurationMillis = minutes * 60000L + seconds * 1000L
+                    timerViewModel.updateTimerDuration(timerId, newDurationMillis, repeating)
+                    navController.popBackStack()
+                },
+                colors = ButtonDefaults.buttonColors(backgroundColor = trackColor),
+                shape = RoundedCornerShape(0.dp),
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 0.dp,
+                            bottomStart = 0.dp,
+                            topEnd = 24.dp,
+                            bottomEnd = 24.dp,
+                        )
+                    )
+            ) {
+                Text(text = "✓", color = Color.Black)
             }
         }
     }
 
     if (focusedField == FocusedField.SECONDS) {
-        CircularSlider(seconds.toDouble()) { newValue ->
+        CircularSlider(seconds.toDouble(), trackColor) { newValue ->
             seconds = newValue.toLong()
         }
     } else if (focusedField == FocusedField.MINUTES) {
-        CircularSlider(minutes.toDouble()) { newValue ->
+        CircularSlider(minutes.toDouble(), trackColor) { newValue ->
             minutes = newValue.toLong()
         }
     }

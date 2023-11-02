@@ -126,6 +126,7 @@ fun angleToPosition(
 @Composable
 fun CircularSlider(
     originalValue: Double,
+    trackColor: Color,
     setNewTimeValue: (Double) -> Unit
 ) {
     val draggerRadiusDp = 16.dp
@@ -134,7 +135,6 @@ fun CircularSlider(
     val draggerRadiusPx = remember { mutableDoubleStateOf(0.0) }
     val sliderState = remember { mutableStateOf(CircularSliderState(DoubleOffset(0.0, 0.0), 0.0)) }
     val draggerState = remember { mutableStateOf(DraggerState(isInitialized = false)) }
-
 
     Box( // The circle around the edge of the screen
         modifier = Modifier
@@ -173,7 +173,7 @@ fun CircularSlider(
             drawCircle(
                 center = Offset(size.width / 2, size.height / 2),
                 radius = sliderState.value.radius.toFloat(),
-                color = Color.Gray,
+                color = trackColor,
                 style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
             )
 //            val centerFloat = sliderState.value.center.toFloat()
@@ -225,7 +225,7 @@ fun CircularSlider(
                 }
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                drawCircle(radius = draggerRadiusPx.doubleValue.toFloat(), color = Color.Blue)
+                drawCircle(radius = draggerRadiusPx.doubleValue.toFloat(), color = Color.White)
             }
         }
     }

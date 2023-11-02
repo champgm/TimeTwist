@@ -6,6 +6,7 @@ data class TimeDetails(
     var elapsedTime: Long = 1,
     var timeRemaining: Long = 1,
 //    var secondsRemaining: Int = 1,
+    var repeating: Boolean = false,
     var started: Boolean = false,
 ) {
 
