@@ -1,10 +1,12 @@
 package com.example.timetwist.presentation
 
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.Job
 import androidx.lifecycle.viewModelScope
@@ -13,8 +15,29 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class TimerViewModel : ViewModel() {
-    // MutableState for timer0, timer1, and timer2
+private const val TIME_TWIST_PREFERENCES = "time_twist_preferences"
+
+fun saveTimerDetails(context: Context, timerId: String, details: TimeDetails) {
+    val prefs = context.getSharedPreferences(TIME_TWIST_PREFERENCES, Context.MODE_PRIVATE)
+    with(prefs.edit()) {
+        putLong("${timerId}_durationMillis", details.durationMillis)
+        putBoolean("${timerId}_repeating", details.repeating)
+        apply()
+    }
+}
+
+fun getTimerDetails(context: Context, timerId: String): TimeDetails? {
+    val prefs = context.getSharedPreferences(TIME_TWIST_PREFERENCES, Context.MODE_PRIVATE)
+    val durationMillis = prefs.getLong("${timerId}_durationMillis", -1L)
+    val repeating = prefs.getBoolean("${timerId}_repeating", false)
+    if (durationMillis != -1L) {
+        return TimeDetails(durationMillis = durationMillis, repeating = repeating)
+    }
+    return null
+}
+
+
+class TimerViewModel(application: Application) : AndroidViewModel(application) {
     var timer0: MutableState<TimeDetails> = mutableStateOf(TimeDetails(durationMillis = 5000L, repeating = true))
     var timer1: MutableState<TimeDetails> = mutableStateOf(TimeDetails(durationMillis = 315000L))
     var timer2: MutableState<TimeDetails> = mutableStateOf(TimeDetails(durationMillis = 60000L))
@@ -23,6 +46,20 @@ class TimerViewModel : ViewModel() {
 
     init {
         startTimers()
+        loadTimersFromPrefs()
+    }
+
+    private fun loadTimersFromPrefs() {
+        val context = getApplication<Application>().applicationContext
+        listOf("timer0", "timer1", "timer2").forEach { timerId ->
+            getTimerDetails(context, timerId)?.let { details ->
+                when (timerId) {
+                    "timer0" -> timer0.value = details
+                    "timer1" -> timer1.value = details
+                    "timer2" -> timer2.value = details
+                }
+            }
+        }
     }
 
     private fun startTimers() {
@@ -54,7 +91,6 @@ class TimerViewModel : ViewModel() {
         }
     }
 
-    // Functions to modify timers
     private fun updateTimer(timer: MutableState<TimeDetails>) {
         val currentTime = System.currentTimeMillis()
         val elapsedTime = currentTime - timer.value.startTime
@@ -83,7 +119,7 @@ class TimerViewModel : ViewModel() {
         )
     }
 
-    fun toggleTimer(timer: MutableState<TimeDetails>) {
+    private fun toggleTimer(timer: MutableState<TimeDetails>) {
         timer.value = timer.value.copy(
             startTime = System.currentTimeMillis(),
             started = !timer.value.started
@@ -101,6 +137,8 @@ class TimerViewModel : ViewModel() {
             "timer2" -> timer2.value = timer2.value.copy(durationMillis = newDurationMillis, repeating = newRepeating)
             else -> throw IllegalArgumentException("Invalid timerId")
         }
+        val context = getApplication<Application>().applicationContext
+        saveTimerDetails(context, id, TimeDetails(durationMillis = newDurationMillis, repeating = newRepeating))
     }
 
     override fun onCleared() {
