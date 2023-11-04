@@ -129,7 +129,7 @@ fun CircularSlider(
     trackColor: Color,
     setNewTimeValue: (Double) -> Unit
 ) {
-    val draggerRadiusDp = 16.dp
+    val draggerRadiusDp = 14.dp
 
     val draggerRadiusInitialized = remember { mutableStateOf(false) }
     val draggerRadiusPx = remember { mutableDoubleStateOf(0.0) }

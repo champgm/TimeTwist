@@ -124,6 +124,7 @@ fun EditScreen(timerId: String?, navController: NavController, timerViewModel: T
                 shape = RoundedCornerShape(0.dp),
                 modifier = Modifier
                     .padding(top = 8.dp)
+                    .size(width = 36.dp, height = 36.dp)
                     .clip(
                         RoundedCornerShape(
                             topStart = 24.dp,
@@ -134,7 +135,7 @@ fun EditScreen(timerId: String?, navController: NavController, timerViewModel: T
                     )
 
             ) {
-                Text(text = "✗", color = Color.Black)
+                Text(text = " ✗", color = Color.Black)
             }
             Button(
                 onClick = {
@@ -146,6 +147,7 @@ fun EditScreen(timerId: String?, navController: NavController, timerViewModel: T
                 shape = RoundedCornerShape(0.dp),
                 modifier = Modifier
                     .padding(top = 8.dp)
+                    .size(width = 36.dp, height = 36.dp)
                     .clip(
                         RoundedCornerShape(
                             topStart = 0.dp,

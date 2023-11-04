@@ -126,18 +126,13 @@ class CountdownService : Service() {
                     PowerManager.PARTIAL_WAKE_LOCK or PowerManager.ON_AFTER_RELEASE,
                     "TimeTwist::CountdownService"
                 )
+            wakeLock.acquire(durationMillis + (10000))
 
             smallVibrate(this@CountdownService)
             try {
                 updateTimes()
                 while (timeRemaining > 1000) {
-//                    Log.d("onStartCommand", "Time Remaining: ${timeRemaining}ms")
-                    if (timeRemaining <= 60000 && !wakeLock.isHeld) {
-                        // The timer is almost up.
-                        // Don't let the device put this service to sleep.
-                        wakeLock.acquire(durationMillis + (durationMillis / 2))
-                    }
-
+                    // Log.d("onStartCommand", "Time Remaining: ${timeRemaining}ms")
                     updateTimes()
                     vibrateDevice(this@CountdownService, durationMillis, timeRemaining)
                     delay(1000)

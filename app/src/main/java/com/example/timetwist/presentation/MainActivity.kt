@@ -114,9 +114,10 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                     onClick = {
                         if (inEditMode) {
                             navController.navigate("edit/timer0")
+                        } else if (timerViewModel.timer0.value.started) {
+                            timerViewModel.stopTimers(context)
                         } else {
-                            timerViewModel.startTimerStopOthers("timer0")
-                            timerViewModel.toggleService(context, coroutineScope)
+                            timerViewModel.startTimer("timer0", context, coroutineScope)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -128,7 +129,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                         .weight(1f),
                     shape = MaterialTheme.shapes.large.copy(CornerSize(0.dp))
                 ) {
-                    val repeating = if(timerViewModel.timer0.value.repeating) "↻" else ""
+                    val repeating = if (timerViewModel.timer0.value.repeating) "↻" else ""
                     val remaining =
                         if (timerViewModel.timer0.value.started) timerViewModel.timer0.value.timeRemaining
                         else (timerViewModel.timer0.value.durationMillis)
@@ -149,9 +150,10 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                     onClick = {
                         if (inEditMode) {
                             navController.navigate("edit/timer1")
+                        } else if (timerViewModel.timer1.value.started) {
+                            timerViewModel.stopTimers(context)
                         } else {
-                            timerViewModel.startTimerStopOthers("timer1")
-                            timerViewModel.toggleService(context, coroutineScope)
+                            timerViewModel.startTimer("timer1", context, coroutineScope)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -164,7 +166,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                     shape = MaterialTheme.shapes.large.copy(CornerSize(0.dp))
 
                 ) {
-                    val repeating = if(timerViewModel.timer1.value.repeating) "↻" else ""
+                    val repeating = if (timerViewModel.timer1.value.repeating) "↻" else ""
                     val remaining =
                         if (timerViewModel.timer1.value.started) timerViewModel.timer1.value.timeRemaining
                         else (timerViewModel.timer1.value.durationMillis)
@@ -178,9 +180,10 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                     onClick = {
                         if (inEditMode) {
                             navController.navigate("edit/timer2")
+                        } else if (timerViewModel.timer2.value.started) {
+                            timerViewModel.stopTimers(context)
                         } else {
-                            timerViewModel.startTimerStopOthers("timer2")
-                            timerViewModel.toggleService(context, coroutineScope)
+                            timerViewModel.startTimer("timer2", context, coroutineScope)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -192,7 +195,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                         .weight(1f),
                     shape = MaterialTheme.shapes.large.copy(CornerSize(0.dp))
                 ) {
-                    val repeating = if(timerViewModel.timer2.value.repeating) "↻" else ""
+                    val repeating = if (timerViewModel.timer2.value.repeating) "↻" else ""
                     val remaining =
                         if (timerViewModel.timer2.value.started) timerViewModel.timer2.value.timeRemaining
                         else (timerViewModel.timer2.value.durationMillis)

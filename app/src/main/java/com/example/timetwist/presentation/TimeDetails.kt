@@ -1,6 +1,7 @@
 package com.example.timetwist.presentation
 
 data class TimeDetails(
+    val timerId: String,
     var durationMillis: Long = 1,
     var startTime: Long = 1,
     var elapsedTime: Long = 1,

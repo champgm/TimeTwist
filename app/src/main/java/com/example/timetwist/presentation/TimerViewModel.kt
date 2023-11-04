@@ -14,6 +14,7 @@ import com.example.timetwist.service.CountdownService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.coroutines.EmptyCoroutineContext
 
 private const val TIME_TWIST_PREFERENCES = "time_twist_preferences"
 
@@ -31,22 +32,27 @@ fun getTimerDetails(context: Context, timerId: String): TimeDetails? {
     val durationMillis = prefs.getLong("${timerId}_durationMillis", -1L)
     val repeating = prefs.getBoolean("${timerId}_repeating", false)
     if (durationMillis != -1L) {
-        return TimeDetails(durationMillis = durationMillis, repeating = repeating)
+        return TimeDetails(timerId, durationMillis = durationMillis, repeating = repeating)
     }
     return null
 }
 
 
 class TimerViewModel(application: Application) : AndroidViewModel(application) {
-    var timer0: MutableState<TimeDetails> = mutableStateOf(TimeDetails(durationMillis = 5000L, repeating = true))
-    var timer1: MutableState<TimeDetails> = mutableStateOf(TimeDetails(durationMillis = 315000L))
-    var timer2: MutableState<TimeDetails> = mutableStateOf(TimeDetails(durationMillis = 60000L))
-
+    var timer0: MutableState<TimeDetails> = mutableStateOf(TimeDetails("timer0", durationMillis = 33000L, repeating = false))
+    var timer1: MutableState<TimeDetails> = mutableStateOf(TimeDetails("timer1", durationMillis = 5000L, repeating = true))
+    var timer2: MutableState<TimeDetails> = mutableStateOf(TimeDetails("timer2", durationMillis = 60000L))
+    private var cachedCoroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext)
     private var timerJob: Job? = null
 
     init {
         startTimers()
         loadTimersFromPrefs()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        timerJob?.cancel()
     }
 
     private fun loadTimersFromPrefs() {
@@ -67,11 +73,14 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
             while (true) {
                 listOf(timer0, timer1, timer2).forEach { timer ->
                     if (timer.value.started) {
-                        updateTimer(timer)
+                        updateTimer(timer.value.timerId)
                         if (timer.value.timeRemaining <= 0L) {
-                            stopTimer(timer)
+                            val context = getApplication<Application>().applicationContext
+                            stopService(context, cachedCoroutineScope)
+                            stopTimer(timer.value.timerId)
                             if (timer.value.repeating) {
-                                toggleTimer(timer)
+                                startService(context, cachedCoroutineScope, timer.value.durationMillis)
+                                startTimer(timer.value.timerId, context, cachedCoroutineScope)
                             }
                         }
                     }
@@ -86,12 +95,19 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
         context.stopService(intent)
         listOf(timer0, timer1, timer2).forEach { timer ->
             if (timer.value.started) {
-                stopTimer(timer)
+                stopTimer(timer.value.timerId)
             }
         }
     }
 
-    private fun updateTimer(timer: MutableState<TimeDetails>) {
+    //    private fun updateTimer(timer: MutableState<TimeDetails>) {
+    private fun updateTimer(timerId: String) {
+        val timer = when (timerId) {
+            "timer0" -> timer0
+            "timer1" -> timer1
+            "timer2" -> timer2
+            else -> throw IllegalArgumentException("Invalid timerId")
+        }
         val currentTime = System.currentTimeMillis()
         val elapsedTime = currentTime - timer.value.startTime
         val timeRemaining = timer.value.durationMillis - elapsedTime
@@ -102,35 +118,37 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    private fun stopTimer(timer: MutableState<TimeDetails>) {
+    //    private fun stopTimer(timer: MutableState<TimeDetails>) {
+    private fun stopTimer(timerId: String) {
+        val timer = when (timerId) {
+            "timer0" -> timer0
+            "timer1" -> timer1
+            "timer2" -> timer2
+            else -> throw IllegalArgumentException("Invalid timerId")
+        }
         timer.value = timer.value.copy(
             started = false
         )
     }
 
-    fun stopTimer(timerId: String) {
-        stopTimer(
-            when (timerId) {
-                "timer0" -> timer0
-                "timer1" -> timer1
-                "timer2" -> timer2
-                else -> throw IllegalArgumentException("Invalid timerId")
+    fun startTimer(startTimerId: String, context: Context, coroutineScope: CoroutineScope) {
+        cachedCoroutineScope = coroutineScope
+        stopService(context, coroutineScope)
+        listOf(timer0, timer1, timer2).forEach { timer ->
+            if (timer.value.timerId == startTimerId) {
+                timer.value = timer.value.copy(
+                    startTime = System.currentTimeMillis(),
+                    started = true
+                )
+                startService(context, coroutineScope, timer.value.durationMillis)
+                updateTimer(timer.value.timerId)
+            } else {
+                stopTimer(timer.value.timerId)
             }
-        )
-    }
-
-    private fun toggleTimer(timer: MutableState<TimeDetails>) {
-        timer.value = timer.value.copy(
-            startTime = System.currentTimeMillis(),
-            started = !timer.value.started
-        )
-        if (timer.value.started) {
-            updateTimer(timer)
         }
     }
 
     fun updateTimerDuration(id: String, newDurationMillis: Long, newRepeating: Boolean) {
-        Log.e("viewmodel", "Updating timer with id: ${id}")
         when (id) {
             "timer0" -> timer0.value = timer0.value.copy(durationMillis = newDurationMillis, repeating = newRepeating)
             "timer1" -> timer1.value = timer1.value.copy(durationMillis = newDurationMillis, repeating = newRepeating)
@@ -138,40 +156,11 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
             else -> throw IllegalArgumentException("Invalid timerId")
         }
         val context = getApplication<Application>().applicationContext
-        saveTimerDetails(context, id, TimeDetails(durationMillis = newDurationMillis, repeating = newRepeating))
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        timerJob?.cancel()
-    }
-
-    fun startTimerStopOthers(startId: String) {
-        val timers = listOf("timer0", "timer1", "timer2")
-        timers.forEach { timerId ->
-            if (startId == timerId) {
-                toggleTimer(
-                    when (timerId) {
-                        "timer0" -> timer0
-                        "timer1" -> timer1
-                        "timer2" -> timer2
-                        else -> throw IllegalArgumentException("Invalid timerId")
-                    }
-                )
-            } else {
-                stopTimer(
-                    when (timerId) {
-                        "timer0" -> timer0
-                        "timer1" -> timer1
-                        "timer2" -> timer2
-                        else -> throw IllegalArgumentException("Invalid timerId")
-                    }
-                )
-            }
-        }
+        saveTimerDetails(context, id, TimeDetails(id, durationMillis = newDurationMillis, repeating = newRepeating))
     }
 
     private fun startService(context: Context, coroutineScope: CoroutineScope, durationMillis: Long) {
+        cachedCoroutineScope = coroutineScope
         val startTime = System.currentTimeMillis()
         coroutineScope.launch {
             val intent = Intent(context, CountdownService::class.java)
@@ -181,16 +170,23 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun toggleService(context: Context, coroutineScope: CoroutineScope) {
+    private fun stopService(context: Context, coroutineScope: CoroutineScope) {
+        cachedCoroutineScope = coroutineScope
         val intent = Intent(context, CountdownService::class.java)
         context.stopService(intent)
-
-        if (timer0.value.started) {
-            startService(context, coroutineScope, timer0.value.durationMillis)
-        } else if (timer1.value.started) {
-            startService(context, coroutineScope, timer1.value.durationMillis)
-        } else if (timer2.value.started) {
-            startService(context, coroutineScope, timer2.value.durationMillis)
-        }
     }
+
+//    fun toggleService(context: Context, coroutineScope: CoroutineScope) {
+//        cachedCoroutineScope = coroutineScope
+//        val intent = Intent(context, CountdownService::class.java)
+//        context.stopService(intent)
+//
+//        if (timer0.value.started) {
+//            startService(context, coroutineScope, timer0.value.durationMillis)
+//        } else if (timer1.value.started) {
+//            startService(context, coroutineScope, timer1.value.durationMillis)
+//        } else if (timer2.value.started) {
+//            startService(context, coroutineScope, timer2.value.durationMillis)
+//        }
+//    }
 }
