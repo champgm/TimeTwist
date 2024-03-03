@@ -100,6 +100,7 @@ class CountdownService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 //        Log.d("onStartCommand", "onStartCommand was called")
         startNotification()
+        val repeating = intent?.getBooleanExtra("repeating", false) ?: false
         durationMillis = intent?.getLongExtra("durationMillis", 0L) ?: 0L
         val startTime = intent?.getLongExtra("startTime", 0L) ?: 0L
         var currentTime = 0L
@@ -126,8 +127,6 @@ class CountdownService : Service() {
                     PowerManager.PARTIAL_WAKE_LOCK or PowerManager.ON_AFTER_RELEASE,
                     "TimeTwist::CountdownService"
                 )
-            wakeLock.acquire(durationMillis + (10000))
-
             smallVibrate(this@CountdownService)
             try {
                 updateTimes()
@@ -140,12 +139,12 @@ class CountdownService : Service() {
 
                 // Time has elapsed
                 vibrateDevice(this@CountdownService, durationMillis, 0)
-                stopForeground(STOP_FOREGROUND_REMOVE)
-                stopSelf()
             } finally {
                 if (wakeLock.isHeld) {
                     wakeLock.release()
                 }
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
             }
         }
 

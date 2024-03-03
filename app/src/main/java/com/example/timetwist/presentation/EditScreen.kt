@@ -3,6 +3,7 @@ package com.example.timetwist.presentation
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,12 +17,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
@@ -55,6 +60,14 @@ fun EditScreen(timerId: String?, navController: NavController, timerViewModel: T
 
     // The state for focused field
     var focusedField by remember { mutableStateOf(FocusedField.SECONDS) }
+
+
+    val focusRequester: FocusRequester = remember { FocusRequester() }
+    var selectedColumn by remember { mutableIntStateOf(0) }
+    LaunchedEffect(selectedColumn) {
+        listOf(focusRequester)[selectedColumn]
+            .requestFocus()
+    }
 
     Column(
         modifier = Modifier
@@ -99,6 +112,8 @@ fun EditScreen(timerId: String?, navController: NavController, timerViewModel: T
                 Text("$minutesString", fontSize = fontSize)
             }
             Text(" ∶ ", fontSize = 20.sp)
+
+
             Box(
                 modifier = Modifier
                     .clickable { focusedField = FocusedField.SECONDS }
@@ -106,7 +121,18 @@ fun EditScreen(timerId: String?, navController: NavController, timerViewModel: T
                         color = if (focusedField == FocusedField.SECONDS) Color.DarkGray else Color.Transparent,
                         shape = RoundedCornerShape(24.dp),
                     )
+                    .focusRequester(focusRequester)
+                    .focusable()
                     .padding(12.dp)
+                    .onRotaryScrollEvent {
+                        Log.e("Rotary", "Got rotary scroll ${it.verticalScrollPixels}")
+                        if (focusedField == FocusedField.SECONDS) {
+                            seconds += it.verticalScrollPixels.toLong()
+                        } else if (focusedField == FocusedField.MINUTES) {
+                            minutes += it.verticalScrollPixels.toLong()
+                        }
+                        true
+                    },
             ) {
                 Text("$secondsString", fontSize = fontSize)
             }

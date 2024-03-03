@@ -79,7 +79,11 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                             stopService(context, cachedCoroutineScope)
                             stopTimer(timer.value.timerId)
                             if (timer.value.repeating) {
-                                startService(context, cachedCoroutineScope, timer.value.durationMillis)
+                                startService(
+                                    context, cachedCoroutineScope,
+                                    timer.value.durationMillis,
+                                    timer.value.repeating
+                                )
                                 startTimer(timer.value.timerId, context, cachedCoroutineScope)
                             }
                         }
@@ -140,7 +144,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                     startTime = System.currentTimeMillis(),
                     started = true
                 )
-                startService(context, coroutineScope, timer.value.durationMillis)
+                startService(context, coroutineScope, timer.value.durationMillis, timer.value.repeating)
                 updateTimer(timer.value.timerId)
             } else {
                 stopTimer(timer.value.timerId)
@@ -159,13 +163,19 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
         saveTimerDetails(context, id, TimeDetails(id, durationMillis = newDurationMillis, repeating = newRepeating))
     }
 
-    private fun startService(context: Context, coroutineScope: CoroutineScope, durationMillis: Long) {
+    private fun startService(
+        context: Context,
+        coroutineScope: CoroutineScope,
+        durationMillis: Long,
+        repeating: Boolean
+    ) {
         cachedCoroutineScope = coroutineScope
         val startTime = System.currentTimeMillis()
         coroutineScope.launch {
             val intent = Intent(context, CountdownService::class.java)
             intent.putExtra("startTime", startTime)
             intent.putExtra("durationMillis", durationMillis)
+            intent.putExtra("repeating", repeating)
             context.startService(intent)
         }
     }
