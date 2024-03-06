@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 
 class CountdownService : Service() {
     public var running = false;
+    private var cancelled = false;
     private var durationMillis = 0L
     private val maxAmplitude = 255
     private val myAmplitude = 200
@@ -121,6 +122,7 @@ class CountdownService : Service() {
 
         Log.d("onStartCommand", "Starting coroutine...")
         CoroutineScope(Dispatchers.IO).launch {
+            cancelled = false
             val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
             var wakeLock: PowerManager.WakeLock =
                 powerManager.newWakeLock(
@@ -130,7 +132,7 @@ class CountdownService : Service() {
             smallVibrate(this@CountdownService)
             try {
                 updateTimes()
-                while (timeRemaining > 1000) {
+                while (timeRemaining > 1000 && !cancelled) {
                     // Log.d("onStartCommand", "Time Remaining: ${timeRemaining}ms")
                     updateTimes()
                     vibrateDevice(this@CountdownService, durationMillis, timeRemaining)
@@ -138,7 +140,9 @@ class CountdownService : Service() {
                 }
 
                 // Time has elapsed
-                vibrateDevice(this@CountdownService, durationMillis, 0)
+                if (!cancelled) {
+                    vibrateDevice(this@CountdownService, durationMillis, 0)
+                }
             } finally {
                 if (wakeLock.isHeld) {
                     wakeLock.release()
@@ -159,6 +163,7 @@ class CountdownService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         durationMillis = 0
+        cancelled = true
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
 }
