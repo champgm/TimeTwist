@@ -1,4 +1,4 @@
-package com.example.timetwist.presentation
+package com.example.timetwist.ui
 
 data class CircularSliderState(
     val center: DoubleOffset,

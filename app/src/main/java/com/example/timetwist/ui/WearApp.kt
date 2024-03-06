@@ -25,7 +25,6 @@ import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.example.timetwist.presentation.TimerViewModel
 import com.example.timetwist.presentation.buttonPadding
-import com.example.timetwist.presentation.getTime
 import com.example.timetwist.presentation.googleBlue
 import com.example.timetwist.presentation.googleGreen
 import com.example.timetwist.presentation.googleRed
@@ -85,6 +84,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                     navController,
                     timerViewModel,
                     timerState = timerViewModel.timer0,
+                    timerId = "timer0",
                     context,
                     coroutineScope,
                     buttonModifier = Modifier
@@ -136,6 +136,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                     navController,
                     timerViewModel,
                     timerState = timerViewModel.timer1,
+                    timerId="timer1",
                     context,
                     coroutineScope,
                     buttonModifier = Modifier
@@ -183,6 +184,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                     navController,
                     timerViewModel,
                     timerState = timerViewModel.timer2,
+                    timerId="timer2",
                     context,
                     coroutineScope,
                     buttonModifier = Modifier

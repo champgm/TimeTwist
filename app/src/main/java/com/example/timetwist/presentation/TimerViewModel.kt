@@ -3,14 +3,13 @@ package com.example.timetwist.presentation
 import android.app.Application
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.Job
 import androidx.lifecycle.viewModelScope
 import com.example.timetwist.service.CountdownService
+import com.example.timetwist.service.TimeDetails
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

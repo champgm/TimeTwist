@@ -1,4 +1,4 @@
-package com.example.timetwist.presentation
+package com.example.timetwist.ui
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -21,16 +21,17 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
+import com.example.timetwist.presentation.TimerViewModel
+import com.example.timetwist.presentation.googleBlue
+import com.example.timetwist.presentation.googleGreen
+import com.example.timetwist.presentation.googleRed
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable

@@ -1,9 +1,6 @@
 package com.example.timetwist.ui
 
 import android.content.Context
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -15,11 +12,8 @@ import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.example.timetwist.presentation.TimerViewModel
-import com.example.timetwist.presentation.buttonPadding
-import com.example.timetwist.presentation.getTime
-import com.example.timetwist.presentation.googleRed
-import com.example.timetwist.presentation.mutedGoogleRed
-import com.example.timetwist.presentation.TimeDetails
+import com.example.timetwist.service.getTime
+import com.example.timetwist.service.TimeDetails
 import kotlinx.coroutines.CoroutineScope
 import androidx.compose.runtime.*
 
@@ -29,6 +23,7 @@ fun TimerButton(
     navController: NavController,
     timerViewModel: TimerViewModel,
     timerState: MutableState<TimeDetails>,
+    timerId: String,
     context: Context,
     coroutineScope: CoroutineScope,
     buttonModifier: Modifier = Modifier,
@@ -43,7 +38,7 @@ fun TimerButton(
             } else if (timerState.value.started) {
                 timerViewModel.stopTimers(context)
             } else {
-                timerViewModel.startTimer("timer0", context, coroutineScope)
+                timerViewModel.startTimer(timerId, context, coroutineScope)
             }
         },
         colors = ButtonDefaults.buttonColors(

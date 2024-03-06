@@ -1,4 +1,4 @@
-package com.example.timetwist.presentation
+package com.example.timetwist.service
 
 data class TimeDetails(
     val timerId: String,

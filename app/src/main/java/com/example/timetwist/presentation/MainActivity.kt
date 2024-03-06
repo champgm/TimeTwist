@@ -10,6 +10,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.timetwist.ui.EditScreen
 import com.example.timetwist.ui.WearApp
 
 val buttonPadding = 4.dp
