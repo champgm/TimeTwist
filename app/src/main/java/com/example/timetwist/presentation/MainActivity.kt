@@ -1,6 +1,7 @@
 package com.example.timetwist.presentation
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.ui.graphics.Color
@@ -31,6 +32,7 @@ val mutedGoogleBlue = muteColor(Color(0xFF2196F3), muteFactor)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContent {
             val timerViewModel: TimerViewModel = viewModel()
             val navController = rememberNavController()
