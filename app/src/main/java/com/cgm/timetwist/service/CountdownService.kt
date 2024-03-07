@@ -1,4 +1,4 @@
-package com.example.timetwist.service
+package com.cgm.timetwist.service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -7,11 +7,9 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
-import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.util.Log
-import com.example.timetwist.R
+import com.cgm.timetwist.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

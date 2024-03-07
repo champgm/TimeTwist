@@ -1,4 +1,4 @@
-package com.example.timetwist.ui
+package com.cgm.timetwist.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures

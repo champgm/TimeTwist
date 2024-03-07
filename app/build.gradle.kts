@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.timetwist"
+    namespace = "com.cgm.timetwist"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.timetwist"
+        applicationId = "com.cgm.timetwist"
         minSdk = 33
         targetSdk = 33
         versionCode = 1

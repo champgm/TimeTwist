@@ -1,4 +1,4 @@
-package com.example.timetwist.presentation
+package com.cgm.timetwist.presentation
 
 import android.os.Bundle
 import android.view.WindowManager
@@ -11,8 +11,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.timetwist.ui.EditScreen
-import com.example.timetwist.ui.WearApp
+import com.cgm.timetwist.ui.EditScreen
+import com.cgm.timetwist.ui.WearApp
 
 val buttonPadding = 4.dp
 val googleYellow = Color(0xFFFFEB3B)

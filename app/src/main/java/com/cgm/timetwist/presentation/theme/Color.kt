@@ -1,4 +1,4 @@
-package com.example.timetwist.presentation.theme
+package com.cgm.timetwist.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.wear.compose.material.Colors

@@ -1,4 +1,4 @@
-package com.example.timetwist.presentation
+package com.cgm.timetwist.presentation
 
 import android.app.Application
 import android.content.Context
@@ -8,8 +8,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.Job
 import androidx.lifecycle.viewModelScope
-import com.example.timetwist.service.CountdownService
-import com.example.timetwist.service.TimeDetails
+import com.cgm.timetwist.service.CountdownService
+import com.cgm.timetwist.service.TimeDetails
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -40,7 +40,7 @@ fun getTimerDetails(context: Context, timerId: String): TimeDetails? {
 class TimerViewModel(application: Application) : AndroidViewModel(application) {
     var timer0: MutableState<TimeDetails> = mutableStateOf(TimeDetails("timer0", durationMillis = 33000L, repeating = false))
     var timer1: MutableState<TimeDetails> = mutableStateOf(TimeDetails("timer1", durationMillis = 5000L, repeating = true))
-    var timer2: MutableState<TimeDetails> = mutableStateOf(TimeDetails("timer2", durationMillis = 60000L))
+    var timer2: MutableState<TimeDetails> = mutableStateOf(TimeDetails("timer2", durationMillis = 310000L))
     private var cachedCoroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext)
     private var timerJob: Job? = null
 

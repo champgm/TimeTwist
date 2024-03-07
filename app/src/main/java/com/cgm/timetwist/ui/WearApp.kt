@@ -1,4 +1,4 @@
-package com.example.timetwist.ui
+package com.cgm.timetwist.ui
 
 import android.content.Context
 import android.util.Log
@@ -23,17 +23,17 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import com.example.timetwist.presentation.TimerViewModel
-import com.example.timetwist.presentation.buttonPadding
-import com.example.timetwist.presentation.googleBlue
-import com.example.timetwist.presentation.googleGreen
-import com.example.timetwist.presentation.googleRed
-import com.example.timetwist.presentation.googleYellow
-import com.example.timetwist.presentation.mutedGoogleBlue
-import com.example.timetwist.presentation.mutedGoogleGreen
-import com.example.timetwist.presentation.mutedGoogleRed
-import com.example.timetwist.presentation.mutedGoogleYellow
-import com.example.timetwist.presentation.theme.TimeTwistTheme
+import com.cgm.timetwist.presentation.TimerViewModel
+import com.cgm.timetwist.presentation.buttonPadding
+import com.cgm.timetwist.presentation.googleBlue
+import com.cgm.timetwist.presentation.googleGreen
+import com.cgm.timetwist.presentation.googleRed
+import com.cgm.timetwist.presentation.googleYellow
+import com.cgm.timetwist.presentation.mutedGoogleBlue
+import com.cgm.timetwist.presentation.mutedGoogleGreen
+import com.cgm.timetwist.presentation.mutedGoogleRed
+import com.cgm.timetwist.presentation.mutedGoogleYellow
+import com.cgm.timetwist.presentation.theme.TimeTwistTheme
 import androidx.compose.runtime.*
 
 @Composable

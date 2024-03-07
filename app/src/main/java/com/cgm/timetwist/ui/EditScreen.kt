@@ -1,4 +1,4 @@
-package com.example.timetwist.ui
+package com.cgm.timetwist.ui
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -28,11 +28,10 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import com.example.timetwist.presentation.TimerViewModel
-import com.example.timetwist.presentation.googleBlue
-import com.example.timetwist.presentation.googleGreen
-import com.example.timetwist.presentation.googleRed
-import com.example.timetwist.presentation.googleYellow
+import com.cgm.timetwist.presentation.TimerViewModel
+import com.cgm.timetwist.presentation.googleBlue
+import com.cgm.timetwist.presentation.googleGreen
+import com.cgm.timetwist.presentation.googleYellow
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable

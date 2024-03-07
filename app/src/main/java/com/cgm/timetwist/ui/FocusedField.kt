@@ -1,4 +1,4 @@
-package com.example.timetwist.ui
+package com.cgm.timetwist.ui
 
 enum class FocusedField {
     NONE,

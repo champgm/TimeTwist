@@ -1,4 +1,4 @@
-package com.example.timetwist.service
+package com.cgm.timetwist.service
 
 fun Long.getTime(): String {
     val minutes = this / 60000

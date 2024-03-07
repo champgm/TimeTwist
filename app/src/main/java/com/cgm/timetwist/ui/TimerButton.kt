@@ -1,4 +1,4 @@
-package com.example.timetwist.ui
+package com.cgm.timetwist.ui
 
 import android.content.Context
 import androidx.compose.foundation.shape.CornerSize
@@ -11,9 +11,9 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import com.example.timetwist.presentation.TimerViewModel
-import com.example.timetwist.service.getTime
-import com.example.timetwist.service.TimeDetails
+import com.cgm.timetwist.presentation.TimerViewModel
+import com.cgm.timetwist.service.getTime
+import com.cgm.timetwist.service.TimeDetails
 import kotlinx.coroutines.CoroutineScope
 import androidx.compose.runtime.*
 
