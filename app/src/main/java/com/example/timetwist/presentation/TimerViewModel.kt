@@ -103,7 +103,15 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    //    private fun updateTimer(timer: MutableState<TimeDetails>) {
+    fun getTimer(timerId: String): TimeDetails {
+        return when (timerId) {
+            "timer0" -> timer0.value
+            "timer1" -> timer1.value
+            "timer2" -> timer2.value
+            else -> throw IllegalArgumentException("Invalid timerId")
+        }
+    }
+
     private fun updateTimer(timerId: String) {
         val timer = when (timerId) {
             "timer0" -> timer0

@@ -57,7 +57,6 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f),
             ) {
-
                 Button(
                     onClick = {
                         timerViewModel.stopTimers(context)
@@ -80,50 +79,21 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                 }
 
                 TimerButton(
-                    inEditMode,
-                    navController,
-                    timerViewModel,
+                    editModeColor = mutedGoogleBlue,
+                    color = googleBlue,
+                    inEditMode = inEditMode,
+                    navController = navController,
+                    timerViewModel = timerViewModel,
                     timerState = timerViewModel.timer0,
                     timerId = "timer0",
-                    context,
-                    coroutineScope,
+                    context = context,
+                    coroutineScope = coroutineScope,
                     buttonModifier = Modifier
                         .fillMaxSize()
                         .padding(start = buttonPadding, bottom = buttonPadding)
                         .weight(1f),
                     textModifier = Modifier.offset(x = -buttonPadding, y = buttonPadding * 3),
-                    editModeColor = mutedGoogleYellow,
-                    color = googleYellow
                 )
-//                Button(
-//                    onClick = {
-//                        if (inEditMode) {
-//                            navController.navigate("edit/timer0")
-//                        } else if (timerViewModel.timer0.value.started) {
-//                            timerViewModel.stopTimers(context)
-//                        } else {
-//                            timerViewModel.startTimer("timer0", context, coroutineScope)
-//                        }
-//                    },
-//                    colors = ButtonDefaults.buttonColors(
-//                        backgroundColor = if (inEditMode) mutedGoogleRed else googleRed
-//                    ),
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .padding(start = buttonPadding, bottom = buttonPadding)
-//                        .weight(1f),
-//                    shape = MaterialTheme.shapes.large.copy(CornerSize(0.dp))
-//                ) {
-//                    val repeating = if (timerViewModel.timer0.value.repeating) "↻" else ""
-//                    val remaining =
-//                        if (timerViewModel.timer0.value.started) timerViewModel.timer0.value.timeRemaining
-//                        else (timerViewModel.timer0.value.durationMillis)
-//                    Text(
-//                        text = "${remaining.getTime()} $repeating",
-//                        modifier = Modifier.offset(x = -buttonPadding, y = buttonPadding * 3),
-//                        color = Color.Black,
-//                    )
-//                }
             }
             Row(
                 // 2
@@ -132,99 +102,37 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                 modifier = Modifier.weight(1f),
             ) {
                 TimerButton(
-                    inEditMode,
-                    navController,
-                    timerViewModel,
+                    editModeColor = mutedGoogleYellow,
+                    color = googleYellow,
+                    inEditMode = inEditMode,
+                    navController = navController,
+                    timerViewModel = timerViewModel,
                     timerState = timerViewModel.timer1,
-                    timerId="timer1",
-                    context,
-                    coroutineScope,
+                    timerId = "timer1",
+                    context = context,
+                    coroutineScope = coroutineScope,
                     buttonModifier = Modifier
                         .fillMaxSize()
                         .padding(end = buttonPadding, top = buttonPadding)
                         .weight(1f),
                     textModifier = Modifier.offset(x = buttonPadding, y = -buttonPadding * 3),
-                    editModeColor = mutedGoogleGreen,
-                    color = googleGreen
                 )
-
-//                Button(
-//                    onClick = {
-//                        if (inEditMode) {
-//                            navController.navigate("edit/timer1")
-//                        } else if (timerViewModel.timer1.value.started) {
-//                            timerViewModel.stopTimers(context)
-//                        } else {
-//                            timerViewModel.startTimer("timer1", context, coroutineScope)
-//                        }
-//                    },
-//                    colors = ButtonDefaults.buttonColors(
-//                        backgroundColor = if (inEditMode) mutedGoogleGreen else googleGreen
-//                    ),
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .padding(end = buttonPadding, top = buttonPadding)
-//                        .weight(1f),
-//                    shape = MaterialTheme.shapes.large.copy(CornerSize(0.dp))
-//
-//                ) {
-//                    val repeating = if (timerViewModel.timer1.value.repeating) "↻" else ""
-//                    val remaining =
-//                        if (timerViewModel.timer1.value.started) timerViewModel.timer1.value.timeRemaining
-//                        else (timerViewModel.timer1.value.durationMillis)
-//                    Text(
-//                        text = "${remaining.getTime()} $repeating",
-//                        modifier = Modifier.offset(x = buttonPadding, y = -buttonPadding * 3),
-//                        color = Color.Black,
-//                    )
-//                }
-
                 TimerButton(
-                    inEditMode,
-                    navController,
-                    timerViewModel,
+                    editModeColor = mutedGoogleGreen,
+                    color = googleGreen,
+                    inEditMode = inEditMode,
+                    navController = navController,
+                    timerViewModel = timerViewModel,
                     timerState = timerViewModel.timer2,
-                    timerId="timer2",
-                    context,
-                    coroutineScope,
+                    timerId = "timer2",
+                    context = context,
+                    coroutineScope = coroutineScope,
                     buttonModifier = Modifier
                         .fillMaxSize()
                         .padding(start = buttonPadding, top = buttonPadding)
                         .weight(1f),
-                    textModifier =Modifier.offset(x = -buttonPadding, y = -buttonPadding * 3),
-                    editModeColor = mutedGoogleBlue,
-                    color = googleBlue
+                    textModifier = Modifier.offset(x = -buttonPadding, y = -buttonPadding * 3),
                 )
-
-//                Button(
-//                    onClick = {
-//                        if (inEditMode) {
-//                            navController.navigate("edit/timer2")
-//                        } else if (timerViewModel.timer2.value.started) {
-//                            timerViewModel.stopTimers(context)
-//                        } else {
-//                            timerViewModel.startTimer("timer2", context, coroutineScope)
-//                        }
-//                    },
-//                    colors = ButtonDefaults.buttonColors(
-//                        backgroundColor = if (inEditMode) mutedGoogleBlue else googleBlue
-//                    ),
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .padding(start = buttonPadding, top = buttonPadding)
-//                        .weight(1f),
-//                    shape = MaterialTheme.shapes.large.copy(CornerSize(0.dp))
-//                ) {
-//                    val repeating = if (timerViewModel.timer2.value.repeating) "↻" else ""
-//                    val remaining =
-//                        if (timerViewModel.timer2.value.started) timerViewModel.timer2.value.timeRemaining
-//                        else (timerViewModel.timer2.value.durationMillis)
-//                    Text(
-//                        text = "${remaining.getTime()} $repeating",
-//                        modifier = Modifier.offset(x = -buttonPadding, y = -buttonPadding * 3),
-//                        color = Color.Black,
-//                    )
-//                }
             }
         }
     }

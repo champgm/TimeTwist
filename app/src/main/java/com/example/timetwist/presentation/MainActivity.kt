@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
                     WearApp(this@MainActivity, navController, timerViewModel)
                 }
                 composable("edit/{timerId}") { backStackEntry ->
-                    val timerId = backStackEntry.arguments?.getString("timerId")
+                    val timerId = backStackEntry.arguments?.getString("timerId") ?: "timer0"
                     EditScreen(timerId, navController, timerViewModel)
                 }
             }

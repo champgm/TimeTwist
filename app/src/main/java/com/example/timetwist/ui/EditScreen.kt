@@ -32,23 +32,18 @@ import com.example.timetwist.presentation.TimerViewModel
 import com.example.timetwist.presentation.googleBlue
 import com.example.timetwist.presentation.googleGreen
 import com.example.timetwist.presentation.googleRed
+import com.example.timetwist.presentation.googleYellow
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun EditScreen(timerId: String?, navController: NavController, timerViewModel: TimerViewModel) {
+fun EditScreen(timerId: String, navController: NavController, timerViewModel: TimerViewModel) {
     val fontSize = 20.sp;
 
-    // Get the timer based on timerId to edit. For now, just assuming timer0
-    val timer = when (timerId) {
-        "timer0" -> timerViewModel.timer0.value
-        "timer1" -> timerViewModel.timer1.value
-        "timer2" -> timerViewModel.timer2.value
-        else -> throw IllegalArgumentException("Invalid timerId")
-    }
+    val timer = timerViewModel.getTimer(timerId)
     val trackColor = when (timerId) {
-        "timer0" -> googleRed
-        "timer1" -> googleGreen
-        "timer2" -> googleBlue
+        "timer0" -> googleBlue
+        "timer1" -> googleYellow
+        "timer2" -> googleGreen
         else -> throw IllegalArgumentException("Invalid timerId")
     }
 
@@ -61,10 +56,8 @@ fun EditScreen(timerId: String?, navController: NavController, timerViewModel: T
 
     // The state for focused field
     var focusedField by remember { mutableStateOf(FocusedField.SECONDS) }
-
-
     val focusRequester: FocusRequester = remember { FocusRequester() }
-    var selectedColumn by remember { mutableIntStateOf(0) }
+    val selectedColumn by remember { mutableIntStateOf(0) }
     LaunchedEffect(selectedColumn) {
         listOf(focusRequester)[selectedColumn]
             .requestFocus()
@@ -82,19 +75,17 @@ fun EditScreen(timerId: String?, navController: NavController, timerViewModel: T
             verticalAlignment = Alignment.Top,
         ) {
             Button(
-                onClick = {
-                    repeating = !repeating
-                },
+                onClick = { repeating = !repeating },
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.Black),
                 modifier = Modifier
-                    .padding(
-                        top = 24.dp,
-                        bottom = 4.dp
-                    )
+                    .padding(top = 24.dp, bottom = 4.dp)
                     .size(36.dp)
-
             ) {
-                Text(text = "↻", color = if (repeating) Color.Green else Color.White, fontSize = 24.sp)
+                Text(
+                    text = "↻",
+                    color = if (repeating) Color.Green else Color.White,
+                    fontSize = 24.sp
+                )
             }
         }
         Row(
@@ -110,11 +101,9 @@ fun EditScreen(timerId: String?, navController: NavController, timerViewModel: T
                     )
                     .padding(12.dp)
             ) {
-                Text("$minutesString", fontSize = fontSize)
+                Text(minutesString, fontSize = fontSize)
             }
             Text(" ∶ ", fontSize = 20.sp)
-
-
             Box(
                 modifier = Modifier
                     .clickable { focusedField = FocusedField.SECONDS }
@@ -135,7 +124,7 @@ fun EditScreen(timerId: String?, navController: NavController, timerViewModel: T
                         true
                     },
             ) {
-                Text("$secondsString", fontSize = fontSize)
+                Text(secondsString, fontSize = fontSize)
             }
         }
 
@@ -144,9 +133,7 @@ fun EditScreen(timerId: String?, navController: NavController, timerViewModel: T
             verticalAlignment = Alignment.CenterVertically
         ) {
             Button(
-                onClick = {
-                    navController.popBackStack()
-                },
+                onClick = { navController.popBackStack() },
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.Gray),
                 shape = RoundedCornerShape(0.dp),
                 modifier = Modifier

@@ -34,52 +34,50 @@ class CountdownService : Service() {
     private val myAmplitudes = intArrayOf(0, myAmplitude, 0, myAmplitude)
 
 
-    fun bigVibrate(context: Context) {
+    private fun bigVibrate(context: Context) {
         // Get the system service for the vibrator
-        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        val vibrator = context.getSystemService(Vibrator::class.java)
 
         // Check if the device has a vibrator
-        if (vibrator.hasVibrator()) {
-            // Create a one-shot vibration effect
+        if (vibrator.hasVibrator()) { // Create a one-shot vibration effect
             val vibrationEffect = VibrationEffect.createOneShot(1000, myAmplitude)
             vibrator.vibrate(vibrationEffect)
-//            Log.d("Vibrate", "Vibration triggered")
         }
     }
 
-    fun smallVibrate(context: Context) {
+    private fun smallVibrate(context: Context) {
         // Get the system service for the vibrator
-        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        if (vibrator.hasVibrator()) {
-            // Create and start vibration
+        val vibrator = context.getSystemService(Vibrator::class.java)
+
+        // Check if the device has a vibrator
+        if (vibrator?.hasVibrator() == true) { // Create and start vibration
             val vibrationEffect = VibrationEffect.createWaveform(myPattern, myAmplitudes, -1)
             vibrator.vibrate(vibrationEffect)
-        } else {
-//            Log.d("Vibrate", "This device does not support vibration")
         }
     }
 
-    private fun vibrateDevice(context: Context, durationMillis: Long, timeRemaining: Long) {
-//        Log.d("Vibrate", "Checking if should vibrate...")
+    private fun vibrateDevice(context: Context, timeRemaining: Long) {
+        // Vibrate if timer is done
         if (timeRemaining <= 0) {
             bigVibrate(context)
             return
         }
 
+        // Vibrate every 15 seconds if less than 1 minute remaining
+        // Otherwise, vibrate every 5 seconds
         val everyXSeconds = if (timeRemaining < 60000) 5 else 15
         val secondsLeft = timeRemaining / 1000L;
 
-        var shouldVibrate = secondsLeft > 0 && (secondsLeft % everyXSeconds) == 0L;
+        // Check if it's time to vibrate
+        val shouldVibrate = secondsLeft > 0 && (secondsLeft % everyXSeconds) == 0L;
         if (!shouldVibrate) return
 
-//        Log.d("Vibrate", "Vibrating with $secondsLeft seconds left")
         smallVibrate(context)
     }
 
-
-    private val NOTIFICATION_ID = 83210 // Choose an ID that uniquely identifies your notification
+    // Not 100% sure this is necessary.
+    private val NOTIFICATION_ID = 83210
     private fun startNotification() {
-//        Log.d("startNotification", "Starting notification...")
         val notificationChannel = NotificationChannel(
             "CountdownServiceChannel",
             "Countdown Service",
@@ -99,9 +97,8 @@ class CountdownService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-//        Log.d("onStartCommand", "onStartCommand was called")
         startNotification()
-        val repeating = intent?.getBooleanExtra("repeating", false) ?: false
+        // val repeating = intent?.getBooleanExtra("repeating", false) ?: false
         durationMillis = intent?.getLongExtra("durationMillis", 0L) ?: 0L
         val startTime = intent?.getLongExtra("startTime", 0L) ?: 0L
         var currentTime = 0L
@@ -112,41 +109,38 @@ class CountdownService : Service() {
             currentTime = System.currentTimeMillis()
             elapsedTime = currentTime - startTime
             timeRemaining = durationMillis - elapsedTime
-//            Log.e("updateTimes", "===========================")
-//            Log.e("updateTimes", "startTime: $startTime")
-//            Log.e("updateTimes", "currentTime: $currentTime")
-//            Log.e("updateTimes", "elapsedTime: $elapsedTime")
-//            Log.e("updateTimes", "timeRemaining: $timeRemaining")
-//            Log.e("updateTimes", "===========================")
         }
 
-        Log.d("onStartCommand", "Starting coroutine...")
+        // This is where the active timer is counted down
         CoroutineScope(Dispatchers.IO).launch {
             cancelled = false
-            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-            var wakeLock: PowerManager.WakeLock =
-                powerManager.newWakeLock(
-                    PowerManager.PARTIAL_WAKE_LOCK or PowerManager.ON_AFTER_RELEASE,
-                    "TimeTwist::CountdownService"
-                )
+
+            // Wake Lock might not be necessary with that window-on-flag thing
+            // val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            // var wakeLock: PowerManager.WakeLock =
+            //     powerManager.newWakeLock(
+            //         PowerManager.PARTIAL_WAKE_LOCK or PowerManager.ON_AFTER_RELEASE,
+            //         "TimeTwist::CountdownService"
+            //     )
+
+            // Timer has started
             smallVibrate(this@CountdownService)
             try {
                 updateTimes()
                 while (timeRemaining > 1000 && !cancelled) {
-                    // Log.d("onStartCommand", "Time Remaining: ${timeRemaining}ms")
                     updateTimes()
-                    vibrateDevice(this@CountdownService, durationMillis, timeRemaining)
+                    vibrateDevice(this@CountdownService, timeRemaining)
                     delay(1000)
                 }
 
                 // Time has elapsed
                 if (!cancelled) {
-                    vibrateDevice(this@CountdownService, durationMillis, 0)
+                    vibrateDevice(this@CountdownService, 0)
                 }
             } finally {
-                if (wakeLock.isHeld) {
-                    wakeLock.release()
-                }
+                // if (wakeLock.isHeld) {
+                //     wakeLock.release()
+                // }
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
             }

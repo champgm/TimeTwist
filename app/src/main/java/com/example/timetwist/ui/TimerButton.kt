@@ -34,7 +34,7 @@ fun TimerButton(
     Button(
         onClick = {
             if (inEditMode) {
-                navController.navigate("edit/timer0")
+                navController.navigate("edit/$timerId")
             } else if (timerState.value.started) {
                 timerViewModel.stopTimers(context)
             } else {
