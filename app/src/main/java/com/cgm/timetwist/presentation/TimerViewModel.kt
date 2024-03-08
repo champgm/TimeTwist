@@ -129,7 +129,6 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    //    private fun stopTimer(timer: MutableState<TimeDetails>) {
     private fun stopTimer(timerId: String) {
         val timer = when (timerId) {
             "timer0" -> timer0
@@ -193,17 +192,4 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
         context.stopService(intent)
     }
 
-//    fun toggleService(context: Context, coroutineScope: CoroutineScope) {
-//        cachedCoroutineScope = coroutineScope
-//        val intent = Intent(context, CountdownService::class.java)
-//        context.stopService(intent)
-//
-//        if (timer0.value.started) {
-//            startService(context, coroutineScope, timer0.value.durationMillis)
-//        } else if (timer1.value.started) {
-//            startService(context, coroutineScope, timer1.value.durationMillis)
-//        } else if (timer2.value.started) {
-//            startService(context, coroutineScope, timer2.value.durationMillis)
-//        }
-//    }
 }

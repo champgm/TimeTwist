@@ -23,7 +23,7 @@ In edit mode, select minutes or seconds and drag the slider to set the number:
 
 On the watch, go to Settings -> Developer Options -> Wireless Debugging and find the `ip:port` item.
 
-The `adb` executable is located in
+Add `adb` to your PATH, the executable is located in
 ```
 %LOCALAPPDATA%\Android\sdk\platform-tools
 ```
@@ -33,12 +33,17 @@ To list `adb` devices
 adb devices
 ```
 
-If `ip:port` of your watch is missing, run
+If the `ip:port` entry for your watch is missing, run
 ```
-adb connect `ip:port`
+adb connect ip:port
+```
+
+You may just be able to (re)install directly
+```
+adb -s 192.168.2.224:42993 install -r app-release.apk
 ```
 
 To force reinstall of the package, run
 ```
-adb -s 192.168.2.224:42993 uninstall com.example.timetwist && adb -s 192.168.2.224:42993 install -r app-release.apk
+adb -s 192.168.2.224:42993 uninstall com.cgm.timetwist && adb -s 192.168.2.224:42993 install -r app-release.apk
 ```

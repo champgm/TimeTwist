@@ -46,6 +46,18 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    sourceSets {
+        getByName("main") {
+            java {
+                srcDirs("src/main/java")
+            }
+        }
+        getByName("test") {
+            java {
+                srcDirs("src/test/java")
+            }
+        }
+    }
 }
 
 dependencies {
@@ -69,8 +81,16 @@ dependencies {
     implementation("com.google.android.horologist:horologist-compose-tools:0.1.8")
     implementation("com.google.android.horologist:horologist-tiles:0.1.8")
     implementation("androidx.wear.watchface:watchface-complications-data-source-ktx:1.1.1")
+    implementation("junit:junit:4.12")
+    testImplementation("junit:junit:4.12")
     androidTestImplementation(platform("androidx.compose:compose-bom:2022.10.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.9.23")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.9.23")
+    testImplementation("org.mockito:mockito-core:3.12.4")
+    testImplementation("org.assertj:assertj-core:3.21.0")
 }
