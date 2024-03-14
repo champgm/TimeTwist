@@ -35,15 +35,15 @@ adb devices
 
 If the `ip:port` entry for your watch is missing, run
 ```
-adb connect ip:port
+adb connect 192.168.2.224:44923 
 ```
 
 You may just be able to (re)install directly
 ```
-adb -s 192.168.2.224:42993 install -r app-release.apk
+adb -s 192.168.2.224:44923 install -r app\release\app-release.apk
 ```
 
 To force reinstall of the package, run
 ```
-adb -s 192.168.2.224:42993 uninstall com.cgm.timetwist && adb -s 192.168.2.224:42993 install -r app-release.apk
+adb -s 192.168.2.224:44923 uninstall com.cgm.timetwist && adb -s 192.168.2.224:44923 install -r app\release\app-release.apk
 ```

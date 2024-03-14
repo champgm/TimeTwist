@@ -15,19 +15,19 @@ import com.cgm.timetwist.ui.EditScreen
 import com.cgm.timetwist.ui.WearApp
 
 val buttonPadding = 4.dp
-val googleYellow = Color(0xFFFFEB3B)
-val googleRed = Color(0xFFF44336)
-val googleGreen = Color(0xFF4CAF50)
-val googleBlue = Color(0xFF2196F3)
+val googleYellow = Color(0xFFFBBC05)
+val googleRed = Color(0xFFEA4335)
+val googleGreen = Color(0xFF34A853)
+val googleBlue = Color(0xFF4285F4)
 fun muteColor(originalColor: Color, factor: Float): Color {
     return lerp(originalColor, Color.Gray, factor)
 }
 
 const val muteFactor = 0.4f
-val mutedGoogleYellow = muteColor(Color(0xFFFFEB3B), muteFactor)
-val mutedGoogleRed = muteColor(Color(0xFFF44336), muteFactor)
-val mutedGoogleGreen = muteColor(Color(0xFF4CAF50), muteFactor)
-val mutedGoogleBlue = muteColor(Color(0xFF2196F3), muteFactor)
+val mutedGoogleYellow = muteColor(googleYellow, muteFactor)
+val mutedGoogleRed = muteColor(googleRed, muteFactor)
+val mutedGoogleGreen = muteColor(googleGreen, muteFactor)
+val mutedGoogleBlue = muteColor(googleBlue, muteFactor)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
