@@ -4,6 +4,10 @@ TimeTwist is a simple WearOS application designed to manage a limited set of tim
 
 Its most important feature is that vibration will occur periodically while the timer is running. The vibrations will occur every 5 seconds if there are 30 seconds or less remaining and every 15 seconds otherwise. This reassures you that the timer is running. 
 
+## Play Store
+
+You can find the app on the Play store here: https://play.google.com/store/apps/details?id=com.cgm.timetwist
+
 ## Screenshots
 
 This is the main timer view:

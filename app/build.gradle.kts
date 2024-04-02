@@ -11,8 +11,8 @@ android {
         applicationId = "com.cgm.timetwist"
         minSdk = 33
         targetSdk = 33
-        versionCode = 2
-        versionName = "2"
+        versionCode = 7
+        versionName = "prod?"
         vectorDrawables {
             useSupportLibrary = true
         }
