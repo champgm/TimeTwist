@@ -52,6 +52,8 @@ fun EditScreen(timerId: String, navController: NavController, timerViewModel: Ti
     var seconds by remember { mutableLongStateOf(((timer.durationMillis % 60000L) / 1000L)) }
     val secondsString = if (seconds < 10) "0$seconds" else "$seconds"
     var repeating by remember { mutableStateOf(timer.repeating) }
+    var vibration by remember { mutableStateOf(timer.vibration) }
+    var sound by remember { mutableStateOf(timer.sound) }
 
     // The state for focused field
     var focusedField by remember { mutableStateOf(FocusedField.SECONDS) }
@@ -72,18 +74,43 @@ fun EditScreen(timerId: String, navController: NavController, timerViewModel: Ti
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top,
+            modifier = Modifier
+                .padding(top = 40.dp, bottom = 8.dp)
         ) {
             Button(
                 onClick = { repeating = !repeating },
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.Black),
-                modifier = Modifier
-                    .padding(top = 24.dp, bottom = 4.dp)
-                    .size(36.dp)
+//                modifier = Modifier
+//                    .size(36.dp)
             ) {
                 Text(
                     text = "↻",
                     color = if (repeating) Color.Green else Color.White,
-                    fontSize = 24.sp
+                    fontSize = 20.sp
+                )
+            }
+            Button(
+                onClick = { sound = !sound },
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color.Black),
+//                modifier = Modifier
+//                    .size(36.dp)
+            ) {
+                Text(
+                    text = if (sound) "🔊" else "🔇",
+                    color = if (repeating) Color.Green else Color.Gray,
+                    fontSize = 20.sp
+                )
+            }
+            Button(
+                onClick = { vibration = !vibration },
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color.Black),
+//                modifier = Modifier
+//                    .size(36.dp)
+            ) {
+                Text(
+                    text = if (vibration) "📳" else "📴",
+                    color = if (repeating) Color.Green else Color.Gray,
+                    fontSize = 20.sp
                 )
             }
         }
@@ -127,6 +154,13 @@ fun EditScreen(timerId: String, navController: NavController, timerViewModel: Ti
             }
         }
 
+//        Row(
+//            horizontalArrangement = Arrangement.SpaceBetween,
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//
+//        }
+
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -153,7 +187,13 @@ fun EditScreen(timerId: String, navController: NavController, timerViewModel: Ti
             Button(
                 onClick = {
                     val newDurationMillis = minutes * 60000L + seconds * 1000L
-                    timerViewModel.updateTimerDuration(timerId, newDurationMillis, repeating)
+                    timerViewModel.updateTimerDuration(
+                        timerId,
+                        newDurationMillis,
+                        repeating,
+                        sound,
+                        vibration
+                    )
                     navController.popBackStack()
                 },
                 colors = ButtonDefaults.buttonColors(backgroundColor = trackColor),

@@ -6,87 +6,85 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.media.SoundPool
 import android.os.IBinder
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.os.VibratorManager
 import com.cgm.timetwist.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import android.util.Log
+import com.cgm.timetwist.SoundPoolManager
+import com.cgm.timetwist.VibrationManager
+
 
 class CountdownService : Service() {
-    public var running = false;
-    private var cancelled = false;
+    private var sound = false
+    private var vibration = false
+    private var cancelled = false
     private var durationMillis = 0L
-    private val maxAmplitude = 255
-    private val myAmplitude = 200
-    private val pause = 200L
-    private val dott = 200L
-    private val dash = 500L
-    private val speedMultiplier = 4L
-    private val spaceBetweenDigits = 500L
-    private val ok = 100L
-    private val okPause = 50L
-    private val myPattern = longArrayOf(0, ok, okPause, ok)
-    private val myAmplitudes = intArrayOf(0, myAmplitude, 0, myAmplitude)
+    private lateinit var vibrator: Vibrator
 
-
-    private fun bigVibrate(context: Context) {
-        // Get the system service for the vibrator
-        val vibrator = context.getSystemService(Vibrator::class.java)
-
-        // Check if the device has a vibrator
-        if (vibrator.hasVibrator()) { // Create a one-shot vibration effect
-            val vibrationEffect = VibrationEffect.createOneShot(1000, myAmplitude)
-            vibrator.vibrate(vibrationEffect)
-        }
+    companion object {
+        private const val NOTIFICATION_CHANNEL_ID = "CountdownServiceChannel"
+        private const val NOTIFICATION_CHANNEL_NAME = "Countdown Service"
+        private const val NOTIFICATION_ID = 83210
     }
 
-    private fun smallVibrate(context: Context) {
-        // Get the system service for the vibrator
-        val vibrator = context.getSystemService(Vibrator::class.java)
-
-        // Check if the device has a vibrator
-        if (vibrator?.hasVibrator() == true) { // Create and start vibration
-            val vibrationEffect = VibrationEffect.createWaveform(myPattern, myAmplitudes, -1)
-            vibrator.vibrate(vibrationEffect)
-        }
+    override fun onCreate() {
+        super.onCreate()
+        vibrator = this.getSystemService(Vibrator::class.java)
     }
 
-    private fun vibrateDevice(context: Context, timeRemaining: Long) {
-        // Vibrate if timer is done
+    private fun bigAlert() {
+        if (sound) SoundPoolManager.playCrunchSound()
+        if (vibration) VibrationManager.vibrateHeavyClick()
+        Log.d("VibrationTest", "Big alert triggered")
+    }
+
+    private fun smallAlert() {
+        if (sound) SoundPoolManager.playClickSound()
+        if (vibration) VibrationManager.vibrateClick()
+        Log.d("VibrationTest", "Small alert triggered")
+    }
+
+    private fun alertDevice(context: Context, timeRemaining: Long) {
+        // Alert if timer is done
         if (timeRemaining <= 0) {
-            bigVibrate(context)
+            bigAlert()
             return
         }
 
-        // Vibrate every 15 seconds if less than 1 minute remaining
-        // Otherwise, vibrate every 5 seconds
+        // Alert every 15 seconds if less than 1 minute remaining
+        // Otherwise, alert every 5 seconds
         val everyXSeconds = if (timeRemaining < 60000) 5 else 15
-        val secondsLeft = timeRemaining / 1000L;
+        val secondsLeft = timeRemaining / 1000L
 
-        // Check if it's time to vibrate
-        val shouldVibrate = secondsLeft > 0 && (secondsLeft % everyXSeconds) == 0L;
-        if (!shouldVibrate) return
+        // Check if it's time to alert
+        val shouldAlert = secondsLeft > 0 && (secondsLeft % everyXSeconds) == 0L
+        if (!shouldAlert) return
 
-        smallVibrate(context)
+        smallAlert()
     }
 
     // Not 100% sure this is necessary.
-    private val NOTIFICATION_ID = 83210
+    private val notificationId = 83210
     private fun startNotification() {
         val notificationChannel = NotificationChannel(
-            "CountdownServiceChannel",
-            "Countdown Service",
+            NOTIFICATION_CHANNEL_ID,
+            NOTIFICATION_CHANNEL_NAME,
             NotificationManager.IMPORTANCE_HIGH
         )
+        notificationChannel.enableVibration(true) // ensure this is on
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(notificationChannel)
 
-        val notification = Notification.Builder(this, "CountdownServiceChannel")
-            .setContentTitle("Countdown Service")
+        val notification = Notification.Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setContentTitle(NOTIFICATION_CHANNEL_NAME)
             .setContentText("Counting down...")
             .setSmallIcon(R.mipmap.ic_launcher)
             .build()
@@ -96,11 +94,12 @@ class CountdownService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startNotification()
-        // val repeating = intent?.getBooleanExtra("repeating", false) ?: false
+        sound = intent?.getBooleanExtra("sound", false) ?: false
+        vibration = intent?.getBooleanExtra("vibration", false) ?: false
         durationMillis = intent?.getLongExtra("durationMillis", 0L) ?: 0L
         val startTime = intent?.getLongExtra("startTime", 0L) ?: 0L
-        var currentTime = 0L
-        var elapsedTime = 0L
+        var currentTime: Long
+        var elapsedTime: Long
         var timeRemaining = 0L
 
         fun updateTimes() {
@@ -122,18 +121,18 @@ class CountdownService : Service() {
             //     )
 
             // Timer has started
-            smallVibrate(this@CountdownService)
+            smallAlert()
             try {
                 updateTimes()
                 while (timeRemaining > 1000 && !cancelled) {
                     updateTimes()
-                    vibrateDevice(this@CountdownService, timeRemaining)
+                    alertDevice(this@CountdownService, timeRemaining)
                     delay(1000)
                 }
 
                 // Time has elapsed
                 if (!cancelled) {
-                    vibrateDevice(this@CountdownService, 0)
+                    alertDevice(this@CountdownService, 0)
                 }
             } finally {
                 // if (wakeLock.isHeld) {
@@ -151,8 +150,8 @@ class CountdownService : Service() {
         return null
     }
 
-
     override fun onDestroy() {
+        bigAlert()
         super.onDestroy()
         durationMillis = 0
         cancelled = true

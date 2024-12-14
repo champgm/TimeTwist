@@ -11,6 +11,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.cgm.timetwist.SoundPoolManager
+import com.cgm.timetwist.VibrationManager
 import com.cgm.timetwist.ui.EditScreen
 import com.cgm.timetwist.ui.WearApp
 
@@ -29,10 +31,16 @@ val mutedGoogleRed = muteColor(googleRed, muteFactor)
 val mutedGoogleGreen = muteColor(googleGreen, muteFactor)
 val mutedGoogleBlue = muteColor(googleBlue, muteFactor)
 
+
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        SoundPoolManager.initialize(this)
+        VibrationManager.initialize(this)
+
         setContent {
             val timerViewModel: TimerViewModel = viewModel()
             val navController = rememberNavController()

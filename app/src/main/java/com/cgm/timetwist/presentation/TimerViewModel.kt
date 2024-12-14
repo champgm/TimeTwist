@@ -38,9 +38,12 @@ fun getTimerDetails(context: Context, timerId: String): TimeDetails? {
 
 
 class TimerViewModel(application: Application) : AndroidViewModel(application) {
-    var timer0: MutableState<TimeDetails> = mutableStateOf(TimeDetails("timer0", durationMillis = 33000L, repeating = false))
-    var timer1: MutableState<TimeDetails> = mutableStateOf(TimeDetails("timer1", durationMillis = 5000L, repeating = true))
-    var timer2: MutableState<TimeDetails> = mutableStateOf(TimeDetails("timer2", durationMillis = 310000L))
+    var timer0: MutableState<TimeDetails> =
+        mutableStateOf(TimeDetails("timer0", durationMillis = 33000L, repeating = false))
+    var timer1: MutableState<TimeDetails> =
+        mutableStateOf(TimeDetails("timer1", durationMillis = 5000L, repeating = true))
+    var timer2: MutableState<TimeDetails> =
+        mutableStateOf(TimeDetails("timer2", durationMillis = 310000L))
     private var cachedCoroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext)
     private var timerJob: Job? = null
 
@@ -81,7 +84,9 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                                 startService(
                                     context, cachedCoroutineScope,
                                     timer.value.durationMillis,
-                                    timer.value.repeating
+                                    timer.value.repeating,
+                                    timer.value.sound,
+                                    timer.value.vibration
                                 )
                                 startTimer(timer.value.timerId, context, cachedCoroutineScope)
                             }
@@ -150,7 +155,14 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                     startTime = System.currentTimeMillis(),
                     started = true
                 )
-                startService(context, coroutineScope, timer.value.durationMillis, timer.value.repeating)
+                startService(
+                    context,
+                    coroutineScope,
+                    timer.value.durationMillis,
+                    timer.value.repeating,
+                    timer.value.sound,
+                    timer.value.vibration
+                )
                 updateTimer(timer.value.timerId)
             } else {
                 stopTimer(timer.value.timerId)
@@ -158,22 +170,55 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun updateTimerDuration(id: String, newDurationMillis: Long, newRepeating: Boolean) {
+    fun updateTimerDuration(
+        id: String,
+        newDurationMillis: Long,
+        newRepeating: Boolean,
+        newSound: Boolean,
+        newVibration: Boolean
+    ) {
         when (id) {
-            "timer0" -> timer0.value = timer0.value.copy(durationMillis = newDurationMillis, repeating = newRepeating)
-            "timer1" -> timer1.value = timer1.value.copy(durationMillis = newDurationMillis, repeating = newRepeating)
-            "timer2" -> timer2.value = timer2.value.copy(durationMillis = newDurationMillis, repeating = newRepeating)
+            "timer0" -> timer0.value =
+                timer0.value.copy(
+                    durationMillis = newDurationMillis,
+                    repeating = newRepeating,
+                    sound = newSound,
+                    vibration = newVibration
+                )
+
+            "timer1" -> timer1.value =
+                timer1.value.copy(
+                    durationMillis = newDurationMillis,
+                    repeating = newRepeating,
+                    sound = newSound,
+                    vibration = newVibration
+                )
+
+            "timer2" -> timer2.value =
+                timer2.value.copy(
+                    durationMillis = newDurationMillis,
+                    repeating = newRepeating,
+                    sound = newSound,
+                    vibration = newVibration
+                )
+
             else -> throw IllegalArgumentException("Invalid timerId")
         }
         val context = getApplication<Application>().applicationContext
-        saveTimerDetails(context, id, TimeDetails(id, durationMillis = newDurationMillis, repeating = newRepeating))
+        saveTimerDetails(
+            context,
+            id,
+            TimeDetails(id, durationMillis = newDurationMillis, repeating = newRepeating)
+        )
     }
 
     private fun startService(
         context: Context,
         coroutineScope: CoroutineScope,
         durationMillis: Long,
-        repeating: Boolean
+        repeating: Boolean,
+        sound: Boolean,
+        vibration: Boolean
     ) {
         cachedCoroutineScope = coroutineScope
         val startTime = System.currentTimeMillis()
@@ -182,6 +227,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
             intent.putExtra("startTime", startTime)
             intent.putExtra("durationMillis", durationMillis)
             intent.putExtra("repeating", repeating)
+            intent.putExtra("sound", sound)
+            intent.putExtra("vibration", vibration)
             context.startService(intent)
         }
     }
