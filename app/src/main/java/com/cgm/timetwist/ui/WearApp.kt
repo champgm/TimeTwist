@@ -47,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 
 private class TriangleShape(private val isTopRight: Boolean) : Shape {
+    val gap =  5f
     override fun createOutline(
         size: Size,
         layoutDirection: androidx.compose.ui.unit.LayoutDirection,
@@ -54,13 +55,13 @@ private class TriangleShape(private val isTopRight: Boolean) : Shape {
     ): Outline {
         val path = Path().apply {
             if (isTopRight) {
-                moveTo(0f, 0f)
+                moveTo(gap, 0f)
                 lineTo(size.width, 0f)
-                lineTo(size.width, size.height)
+                lineTo(size.width, size.height-gap)
             } else {
-                moveTo(0f, 0f)
+                moveTo(0f, gap)
                 lineTo(0f, size.height)
-                lineTo(size.width, size.height)
+                lineTo(size.width-gap, size.height)
             }
             close()
         }
@@ -116,7 +117,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                     ) {
                         Text(
                             text = if (inEditMode) "✅" else "⚙️",
-                            modifier = Modifier.offset(x = 20.dp, y = (-10).dp),
+                            modifier = Modifier.offset(x = 24.dp, y = (-18).dp),
                             color = if (darkMode) white else black
                         )
                     }
@@ -141,7 +142,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                     ) {
                         Text(
                             text = if (darkMode) "🌑" else "☀️",
-                            modifier = Modifier.offset(x = (-10).dp, y = 20.dp),
+                            modifier = Modifier.offset(x = (-18).dp, y = 24.dp),
                             color = if (darkMode) white else black
                         )
                     }

@@ -156,9 +156,9 @@ class CountdownService : Service() {
         
         Log.d("setupOngoingActivity", "Calling startForeground")
         startForeground(NOTIFICATION_ID, notification)
-//        val notificationManager =
-//            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-//        notificationManager.notify(NOTIFICATION_ID, notification)
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(NOTIFICATION_ID, notification)
 
         val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.circle_icon)
         val ongoingActivityBuilder = OngoingActivity.Builder(applicationContext, NOTIFICATION_ID, notificationBuilder)
