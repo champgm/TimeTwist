@@ -72,7 +72,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                     shape = MaterialTheme.shapes.large.copy(CornerSize(0.dp))
                 ) {
                     Text(
-                        text = if (inEditMode) "Done" else "Edit",
+                        text = if (inEditMode) "✅" else "⚙️",
                         modifier = Modifier.offset(x = buttonPadding, y = buttonPadding * 3),
                         color = Color.Black,
                     )
