@@ -74,7 +74,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
 
     TimeTwistTheme {
         var inEditMode by remember { mutableStateOf(false) }
-        var darkMode by remember { mutableStateOf(true) }
+        var darkMode by remember { mutableStateOf(false) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
