@@ -1,8 +1,8 @@
 # TimeTwist
 
-TimeTwist is a simple WearOS application designed to manage a limited set of timers. It's built with Kotlin and uses Jetpack Compose for the UI. The interface is very flat. It has 4 buttons, 3 of which are timers able to be configured. The fourth is an Edit mode toggle that allows you to edit a timer. One unique feature I designed was a nice way to edit numerical values by dragging a circular slider around the edge of the screen.
+TimeTwist is a simple WearOS application designed to manage a limited set of timers. It's built with Kotlin and uses Jetpack Compose for the UI. The interface is very flat. It has 5 buttons, 3 of which are timers able to be configured. The four and five are an Edit mode toggle that allows you to edit a timer and a dark mode toggle. One unique thing I designed was a nice way to edit numerical values by dragging a circular slider around the edge of the screen.
 
-Its most important feature is that vibration will occur periodically while the timer is running. The vibrations will occur every 5 seconds if there are 30 seconds or less remaining and every 15 seconds otherwise. This reassures you that the timer is running. 
+TimeTwist's most important feature is that vibration will occur periodically while the timer is running. The vibrations will occur every 5 seconds if there are 30 seconds or less remaining and every 15 seconds otherwise. This reassures you that the timer is running.
 
 ## Play Store
 
