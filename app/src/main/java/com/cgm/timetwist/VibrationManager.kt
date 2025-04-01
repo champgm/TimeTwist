@@ -10,7 +10,10 @@ object VibrationManager {
     private var isInitialized: Boolean = false
 
     fun initialize(context: Context) {
-        vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        val vibratorManager =
+            context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as android.os.VibratorManager
+        vibrator = vibratorManager.defaultVibrator
+
         if (vibrator.hasVibrator()) {
             isInitialized = true
             Log.d("VibrationManager", "Vibrator initialized successfully.")
@@ -31,7 +34,8 @@ object VibrationManager {
 
     fun vibrateHeavyClick() {
         if (isInitialized) {
-            val heavyClickEffect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK)
+            val heavyClickEffect =
+                VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK)
             vibrator.vibrate(heavyClickEffect)
             Log.d("VibrationManager", "Heavy click vibration triggered.")
         } else {

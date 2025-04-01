@@ -75,7 +75,7 @@ fun EditScreen(timerId: String, navController: NavController, timerViewModel: Ti
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top,
             modifier = Modifier
-                .padding(top = 40.dp, bottom = 8.dp)
+                .padding(top = 20.dp, bottom = 8.dp)
         ) {
             Button(
                 onClick = { repeating = !repeating },

@@ -22,6 +22,8 @@ fun saveTimerDetails(context: Context, timerId: String, details: TimeDetails) {
     with(prefs.edit()) {
         putLong("${timerId}_durationMillis", details.durationMillis)
         putBoolean("${timerId}_repeating", details.repeating)
+        putBoolean("${timerId}_vibration", details.vibration)
+        putBoolean("${timerId}_sound", details.sound)
         apply()
     }
 }
@@ -30,8 +32,16 @@ fun getTimerDetails(context: Context, timerId: String): TimeDetails? {
     val prefs = context.getSharedPreferences(TIME_TWIST_PREFERENCES, Context.MODE_PRIVATE)
     val durationMillis = prefs.getLong("${timerId}_durationMillis", -1L)
     val repeating = prefs.getBoolean("${timerId}_repeating", false)
+    val vibration = prefs.getBoolean("${timerId}_vibration", false)
+    val sound = prefs.getBoolean("${timerId}_sound", false)
     if (durationMillis != -1L) {
-        return TimeDetails(timerId, durationMillis = durationMillis, repeating = repeating)
+        return TimeDetails(
+            timerId,
+            durationMillis = durationMillis,
+            repeating = repeating,
+            vibration = vibration,
+            sound = sound
+        )
     }
     return null
 }
@@ -39,11 +49,35 @@ fun getTimerDetails(context: Context, timerId: String): TimeDetails? {
 
 class TimerViewModel(application: Application) : AndroidViewModel(application) {
     var timer0: MutableState<TimeDetails> =
-        mutableStateOf(TimeDetails("timer0", durationMillis = 33000L, repeating = false))
+        mutableStateOf(
+            TimeDetails(
+                "timer0",
+                durationMillis = 33000L,
+                repeating = false,
+                sound = false,
+                vibration = false
+            )
+        )
     var timer1: MutableState<TimeDetails> =
-        mutableStateOf(TimeDetails("timer1", durationMillis = 5000L, repeating = true))
+        mutableStateOf(
+            TimeDetails(
+                "timer1",
+                durationMillis = 5000L,
+                repeating = true,
+                sound = true,
+                vibration = true
+            )
+        )
     var timer2: MutableState<TimeDetails> =
-        mutableStateOf(TimeDetails("timer2", durationMillis = 310000L))
+        mutableStateOf(
+            TimeDetails(
+                "timer2",
+                durationMillis = 310000L,
+                repeating = false,
+                sound = true,
+                vibration = true
+            )
+        )
     private var cachedCoroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext)
     private var timerJob: Job? = null
 
@@ -208,7 +242,13 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
         saveTimerDetails(
             context,
             id,
-            TimeDetails(id, durationMillis = newDurationMillis, repeating = newRepeating)
+            TimeDetails(
+                id,
+                durationMillis = newDurationMillis,
+                repeating = newRepeating,
+                sound = newSound,
+                vibration = newVibration
+            )
         )
     }
 
