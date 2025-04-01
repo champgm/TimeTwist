@@ -1,32 +1,27 @@
 package com.cgm.timetwist.service
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.media.SoundPool
+import android.graphics.drawable.Icon
 import android.os.IBinder
-import android.os.SystemClock
-import android.os.VibrationEffect
 import android.os.Vibrator
-import android.os.VibratorManager
-import android.text.Html
+import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.graphics.drawable.IconCompat
 import androidx.wear.ongoing.OngoingActivity
 import androidx.wear.ongoing.Status
 import com.cgm.timetwist.R
+import com.cgm.timetwist.SoundPoolManager
+import com.cgm.timetwist.VibrationManager
+import com.cgm.timetwist.presentation.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import android.util.Log
-import com.cgm.timetwist.SoundPoolManager
-import com.cgm.timetwist.presentation.MainActivity
-import com.cgm.timetwist.VibrationManager
-import java.util.concurrent.TimeUnit
 
 
 class CountdownService : Service() {
@@ -165,8 +160,9 @@ class CountdownService : Service() {
 //            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 //        notificationManager.notify(NOTIFICATION_ID, notification)
 
+        val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.circle_icon)
         val ongoingActivityBuilder = OngoingActivity.Builder(applicationContext, NOTIFICATION_ID, notificationBuilder)
-            .setAnimatedIcon(R.mipmap.ic_launcher)
+            .setStaticIcon(icon)
             .setTouchIntent(createActivityPendingIntent())
 
         Log.d("setupOngoingActivity", "Building ongoing activity...")
@@ -183,12 +179,16 @@ class CountdownService : Service() {
     }
 
     private fun createNotificationBuilder(): NotificationCompat.Builder {
+        val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.circle_icon)
+        val iconCompat = IconCompat.createWithResource(applicationContext, R.drawable.circle_icon)
+
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setLargeIcon(icon)
+            .setSmallIcon(iconCompat)
             .setContentTitle(getString(R.string.app_name))
             .setContentText("Timer running...")
             .setOngoing(true)
-            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             // Add the intent to open the app when the notification is tapped
             .setContentIntent(createActivityPendingIntent())
