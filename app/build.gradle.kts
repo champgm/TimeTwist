@@ -84,6 +84,7 @@ dependencies {
     implementation("androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.1")
     implementation("junit:junit:4.13.2")
     implementation("androidx.wear:wear-ongoing:1.0.0")
+    implementation("androidx.activity:activity-ktx:1.10.1")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation(platform("androidx.compose:compose-bom:2025.03.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
