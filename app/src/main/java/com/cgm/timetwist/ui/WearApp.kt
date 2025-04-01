@@ -117,7 +117,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                         Text(
                             text = if (inEditMode) "✅" else "⚙️",
                             modifier = Modifier.offset(x = 20.dp, y = (-10).dp),
-                            color = Color.Black,
+                            color = if (darkMode) white else black
                         )
                     }
 
@@ -140,9 +140,9 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                         shape = MaterialTheme.shapes.large.copy(CornerSize(0.dp))
                     ) {
                         Text(
-                            text = "💡",
+                            text = if (darkMode) "🌑" else "☀️",
                             modifier = Modifier.offset(x = (-10).dp, y = 20.dp),
-                            color = Color.Black,
+                            color = if (darkMode) white else black
                         )
                     }
                 }
