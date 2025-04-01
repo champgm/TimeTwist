@@ -55,7 +55,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                 durationMillis = 33000L,
                 repeating = false,
                 sound = false,
-                vibration = false
+                vibration = true
             )
         )
     var timer1: MutableState<TimeDetails> =
@@ -63,7 +63,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
             TimeDetails(
                 "timer1",
                 durationMillis = 5000L,
-                repeating = true,
+                repeating = false,
                 sound = true,
                 vibration = true
             )

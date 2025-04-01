@@ -24,8 +24,10 @@ object VibrationManager {
 
     fun vibrateClick() {
         if (isInitialized) {
-            val clickEffect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
-            vibrator.vibrate(clickEffect)
+            val offOn: Long = 50
+            val pattern = longArrayOf(0, offOn, offOn, offOn)
+            val effect = VibrationEffect.createWaveform(pattern, -1)
+            vibrator.vibrate(effect)
             Log.d("VibrationManager", "Click vibration triggered.")
         } else {
             Log.w("VibrationManager", "Vibrator not initialized or unsupported.")
@@ -34,9 +36,9 @@ object VibrationManager {
 
     fun vibrateHeavyClick() {
         if (isInitialized) {
-            val heavyClickEffect =
-                VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK)
-            vibrator.vibrate(heavyClickEffect)
+            val pattern = longArrayOf(0, 800)
+            val effect = VibrationEffect.createWaveform(pattern, -1)
+            vibrator.vibrate(effect)
             Log.d("VibrationManager", "Heavy click vibration triggered.")
         } else {
             Log.w("VibrationManager", "Vibrator not initialized or unsupported.")
