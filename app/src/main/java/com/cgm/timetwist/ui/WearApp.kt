@@ -116,7 +116,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                     ) {
                         Text(
                             text = if (inEditMode) "✅" else "⚙️",
-                            modifier = Modifier.offset(x = buttonPadding * 3, y = buttonPadding),
+                            modifier = Modifier.offset(x = 20.dp, y = (-10).dp),
                             color = Color.Black,
                         )
                     }
@@ -128,8 +128,10 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                         },
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = when {
-                                darkMode -> mutedBlack
-                                else -> mutedGoogleRed
+                                inEditMode && darkMode -> mutedBlack
+                                inEditMode -> mutedGoogleRed
+                                darkMode -> black
+                                else -> googleRed
                             }
                         ),
                         modifier = Modifier
@@ -139,7 +141,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                     ) {
                         Text(
                             text = "💡",
-                            modifier = Modifier.offset(x = buttonPadding, y = buttonPadding * 3),
+                            modifier = Modifier.offset(x = (-10).dp, y = 20.dp),
                             color = Color.Black,
                         )
                     }
