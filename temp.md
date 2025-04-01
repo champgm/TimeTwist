@@ -1,8 +1,8 @@
-adb connect 192.168.2.224:32991 
+adb connect 192.168.2.224:39219 
 
-adb -s 192.168.2.224:32991 uninstall com.cgm.timetwist 
+adb -s 192.168.2.224:39219 uninstall com.cgm.timetwist 
 
-adb -s 192.168.2.224:32991 install -r .\app\release\app-release.apk 
+adb -s 192.168.2.224:39219 install -r .\app\release\app-release.apk 
 
 
 adb connect adb-27101JEEJW0064-gneYdC._adb-tls-connect._tcp

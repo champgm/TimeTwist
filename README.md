@@ -22,6 +22,10 @@ In edit mode, select minutes or seconds and drag the slider to set the number:
 
 ![Set Time](screenshots/03_edit.png)
 
+Now with dark mode:
+
+![Dark Mode](screenshots/04_dark_mode.png)
+
 
 ## ADB
 

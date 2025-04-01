@@ -10,10 +10,10 @@ android {
 
     defaultConfig {
         applicationId = "com.cgm.timetwist"
-        minSdk = 34
-        targetSdk = 35
-        versionCode = 7
-        versionName = "prod?"
+        minSdk = 33
+        targetSdk = 34
+        versionCode = 9
+        versionName = "dark-mode"
         vectorDrawables {
             useSupportLibrary = true
         }
