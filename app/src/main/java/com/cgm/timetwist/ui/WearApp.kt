@@ -35,6 +35,10 @@ import com.cgm.timetwist.presentation.mutedGoogleRed
 import com.cgm.timetwist.presentation.mutedGoogleYellow
 import com.cgm.timetwist.presentation.theme.TimeTwistTheme
 import androidx.compose.runtime.*
+import com.cgm.timetwist.presentation.black
+import com.cgm.timetwist.presentation.white
+import com.cgm.timetwist.presentation.mutedBlack
+import com.cgm.timetwist.presentation.mutedWhite
 
 @Composable
 fun WearApp(context: Context, navController: NavController, timerViewModel: TimerViewModel) {
@@ -42,11 +46,11 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
 
     TimeTwistTheme {
         var inEditMode by remember { mutableStateOf(false) }
-
+        var darkMode by remember { mutableStateOf(true) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colors.background),
+                .background(if (darkMode) white else black),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -63,7 +67,12 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                         inEditMode = !inEditMode
                     },
                     colors = ButtonDefaults.buttonColors(
-                        backgroundColor = if (inEditMode) mutedGoogleRed else googleRed
+                        backgroundColor = when {
+                            inEditMode && darkMode -> mutedBlack
+                            inEditMode -> mutedGoogleRed
+                            darkMode -> black
+                            else -> googleRed
+                        }
                     ),
                     modifier = Modifier
                         .fillMaxSize()
@@ -79,8 +88,10 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                 }
 
                 TimerButton(
-                    editModeColor = mutedGoogleBlue,
-                    color = googleBlue,
+                    // editModeColor = mutedGoogleBlue,
+                    editModeColor = if (darkMode) mutedBlack else mutedGoogleBlue,
+                    // color = googleBlue,
+                    color = if (darkMode) black else googleBlue,
                     inEditMode = inEditMode,
                     navController = navController,
                     timerViewModel = timerViewModel,
@@ -93,6 +104,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                         .padding(start = buttonPadding, bottom = buttonPadding)
                         .weight(1f),
                     textModifier = Modifier.offset(x = -buttonPadding, y = buttonPadding * 3),
+                    textColor = if (darkMode) white else black
                 )
             }
             Row(
@@ -102,8 +114,10 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                 modifier = Modifier.weight(1f),
             ) {
                 TimerButton(
-                    editModeColor = mutedGoogleYellow,
-                    color = googleYellow,
+                    // editModeColor = mutedGoogleYellow,
+                    editModeColor = if (darkMode) mutedBlack else mutedGoogleYellow,
+                    // color = googleYellow,
+                    color = if (darkMode) black else googleYellow,
                     inEditMode = inEditMode,
                     navController = navController,
                     timerViewModel = timerViewModel,
@@ -116,10 +130,13 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                         .padding(end = buttonPadding, top = buttonPadding)
                         .weight(1f),
                     textModifier = Modifier.offset(x = buttonPadding, y = -buttonPadding * 3),
+                    textColor = if (darkMode) white else black,
                 )
                 TimerButton(
-                    editModeColor = mutedGoogleGreen,
-                    color = googleGreen,
+                    // editModeColor = mutedGoogleGreen,
+                    editModeColor = if (darkMode) mutedBlack else mutedGoogleGreen,
+                    // color = googleGreen,
+                    color = if (darkMode) black else googleGreen,
                     inEditMode = inEditMode,
                     navController = navController,
                     timerViewModel = timerViewModel,
@@ -132,6 +149,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                         .padding(start = buttonPadding, top = buttonPadding)
                         .weight(1f),
                     textModifier = Modifier.offset(x = -buttonPadding, y = -buttonPadding * 3),
+                    textColor = if (darkMode) white else black,
                 )
             }
         }

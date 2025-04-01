@@ -36,7 +36,7 @@ object VibrationManager {
 
     fun vibrateHeavyClick() {
         if (isInitialized) {
-            val pattern = longArrayOf(0, 800)
+            val pattern = longArrayOf(0, 700)
             val effect = VibrationEffect.createWaveform(pattern, -1)
             vibrator.vibrate(effect)
             Log.d("VibrationManager", "Heavy click vibration triggered.")

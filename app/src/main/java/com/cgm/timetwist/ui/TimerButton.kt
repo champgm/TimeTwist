@@ -29,7 +29,8 @@ fun TimerButton(
     buttonModifier: Modifier = Modifier,
     textModifier: Modifier = Modifier,
     color: Color,
-    editModeColor: Color
+    editModeColor: Color,
+    textColor: Color
 ) {
     Button(
         onClick = {
@@ -54,7 +55,7 @@ fun TimerButton(
         Text(
             text = "${remaining.getTime()} $repeating",
             modifier = textModifier,
-            color = Color.Black,
+            color = textColor,
         )
     }
 

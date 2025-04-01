@@ -21,6 +21,8 @@ val googleYellow = Color(0xFFFBBC05)
 val googleRed = Color(0xFFEA4335)
 val googleGreen = Color(0xFF34A853)
 val googleBlue = Color(0xFF4285F4)
+val black = Color(0xFF000000)
+val white = Color(0xFFFFFFFF)
 fun muteColor(originalColor: Color, factor: Float): Color {
     return lerp(originalColor, Color.Gray, factor)
 }
@@ -30,6 +32,8 @@ val mutedGoogleYellow = muteColor(googleYellow, muteFactor)
 val mutedGoogleRed = muteColor(googleRed, muteFactor)
 val mutedGoogleGreen = muteColor(googleGreen, muteFactor)
 val mutedGoogleBlue = muteColor(googleBlue, muteFactor)
+val mutedBlack = muteColor(black, muteFactor)
+val mutedWhite = muteColor(white, muteFactor)
 
 
 class MainActivity : ComponentActivity() {
