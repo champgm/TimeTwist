@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +18,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.wear.compose.material.Button
@@ -39,6 +43,30 @@ import com.cgm.timetwist.presentation.black
 import com.cgm.timetwist.presentation.white
 import com.cgm.timetwist.presentation.mutedBlack
 import com.cgm.timetwist.presentation.mutedWhite
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
+
+private class TriangleShape(private val isTopRight: Boolean) : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+        density: androidx.compose.ui.unit.Density
+    ): Outline {
+        val path = Path().apply {
+            if (isTopRight) {
+                moveTo(0f, 0f)
+                lineTo(size.width, 0f)
+                lineTo(size.width, size.height)
+            } else {
+                moveTo(0f, 0f)
+                lineTo(0f, size.height)
+                lineTo(size.width, size.height)
+            }
+            close()
+        }
+        return Outline.Generic(path)
+    }
+}
 
 @Composable
 fun WearApp(context: Context, navController: NavController, timerViewModel: TimerViewModel) {
@@ -50,7 +78,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(if (darkMode) white else black),
+                .background(if (darkMode) mutedWhite else black),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -61,36 +89,64 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f),
             ) {
-                Button(
-                    onClick = {
-                        timerViewModel.stopTimers(context)
-                        inEditMode = !inEditMode
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = when {
-                            inEditMode && darkMode -> mutedBlack
-                            inEditMode -> mutedGoogleRed
-                            darkMode -> black
-                            else -> googleRed
-                        }
-                    ),
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(end = buttonPadding, bottom = buttonPadding)
-                        .weight(1f),
-                    shape = MaterialTheme.shapes.large.copy(CornerSize(0.dp))
+                        .weight(1f)
                 ) {
-                    Text(
-                        text = if (inEditMode) "✅" else "⚙️",
-                        modifier = Modifier.offset(x = buttonPadding, y = buttonPadding * 3),
-                        color = Color.Black,
-                    )
+                    // Top-right triangle (Settings button)
+                    Button(
+                        onClick = {
+                            timerViewModel.stopTimers(context)
+                            inEditMode = !inEditMode
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = when {
+                                inEditMode && darkMode -> mutedBlack
+                                inEditMode -> mutedGoogleRed
+                                darkMode -> black
+                                else -> googleRed
+                            }
+                        ),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(TriangleShape(true)),
+                        shape = MaterialTheme.shapes.large.copy(CornerSize(0.dp))
+                    ) {
+                        Text(
+                            text = if (inEditMode) "✅" else "⚙️",
+                            modifier = Modifier.offset(x = buttonPadding * 3, y = buttonPadding),
+                            color = Color.Black,
+                        )
+                    }
+
+                    // Bottom-left triangle (Theme toggle button)
+                    Button(
+                        onClick = {
+                            darkMode = !darkMode
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = when {
+                                darkMode -> mutedBlack
+                                else -> mutedGoogleRed
+                            }
+                        ),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(TriangleShape(false)),
+                        shape = MaterialTheme.shapes.large.copy(CornerSize(0.dp))
+                    ) {
+                        Text(
+                            text = "💡",
+                            modifier = Modifier.offset(x = buttonPadding, y = buttonPadding * 3),
+                            color = Color.Black,
+                        )
+                    }
                 }
 
                 TimerButton(
-                    // editModeColor = mutedGoogleBlue,
                     editModeColor = if (darkMode) mutedBlack else mutedGoogleBlue,
-                    // color = googleBlue,
                     color = if (darkMode) black else googleBlue,
                     inEditMode = inEditMode,
                     navController = navController,
@@ -114,9 +170,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                 modifier = Modifier.weight(1f),
             ) {
                 TimerButton(
-                    // editModeColor = mutedGoogleYellow,
                     editModeColor = if (darkMode) mutedBlack else mutedGoogleYellow,
-                    // color = googleYellow,
                     color = if (darkMode) black else googleYellow,
                     inEditMode = inEditMode,
                     navController = navController,
@@ -133,9 +187,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                     textColor = if (darkMode) white else black,
                 )
                 TimerButton(
-                    // editModeColor = mutedGoogleGreen,
                     editModeColor = if (darkMode) mutedBlack else mutedGoogleGreen,
-                    // color = googleGreen,
                     color = if (darkMode) black else googleGreen,
                     inEditMode = inEditMode,
                     navController = navController,
