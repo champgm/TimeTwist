@@ -3,6 +3,7 @@ package com.cgm.timetwist.service
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -11,6 +12,8 @@ import android.os.IBinder
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import androidx.core.app.NotificationCompat
+import androidx.wear.ongoing.OngoingActivity
 import com.cgm.timetwist.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +21,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import android.util.Log
 import com.cgm.timetwist.SoundPoolManager
+import com.cgm.timetwist.presentation.MainActivity
 import com.cgm.timetwist.VibrationManager
 
 
@@ -27,6 +31,7 @@ class CountdownService : Service() {
     private var cancelled = false
     private var durationMillis = 0L
     private lateinit var vibrator: Vibrator
+    private var ongoingActivity: OngoingActivity? = null
 
     companion object {
         private const val NOTIFICATION_CHANNEL_ID = "CountdownServiceChannel"
@@ -87,13 +92,13 @@ class CountdownService : Service() {
             .setContentTitle(NOTIFICATION_CHANNEL_NAME)
             .setContentText("Counting down...")
             .setSmallIcon(R.mipmap.ic_launcher)
+            .setOngoing(true)
             .build()
 
         startForeground(NOTIFICATION_ID, notification)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startNotification()
         sound = intent?.getBooleanExtra("sound", false) ?: false
         vibration = intent?.getBooleanExtra("vibration", false) ?: false
         durationMillis = intent?.getLongExtra("durationMillis", 0L) ?: 0L
@@ -108,17 +113,15 @@ class CountdownService : Service() {
             timeRemaining = durationMillis - elapsedTime
         }
 
+        // Create notification channel (needs to be done before building notification)
+        createNotificationChannel()
+
+        // Set up Ongoing Activity
+        setupOngoingActivity(durationMillis)
+
         // This is where the active timer is counted down
         CoroutineScope(Dispatchers.IO).launch {
             cancelled = false
-
-            // Wake Lock might not be necessary with that window-on-flag thing
-            // val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-            // var wakeLock: PowerManager.WakeLock =
-            //     powerManager.newWakeLock(
-            //         PowerManager.PARTIAL_WAKE_LOCK or PowerManager.ON_AFTER_RELEASE,
-            //         "TimeTwist::CountdownService"
-            //     )
 
             // Timer has started
             smallAlert()
@@ -135,10 +138,7 @@ class CountdownService : Service() {
                     alertDevice(this@CountdownService, 0)
                 }
             } finally {
-                // if (wakeLock.isHeld) {
-                //     wakeLock.release()
-                // }
-                stopForeground(STOP_FOREGROUND_REMOVE)
+                // OngoingActivity handles stopping foreground implicitly when status is cleared
                 stopSelf()
             }
         }
@@ -155,6 +155,74 @@ class CountdownService : Service() {
         super.onDestroy()
         durationMillis = 0
         cancelled = true
-        stopForeground(STOP_FOREGROUND_REMOVE)
+        ongoingActivity = null
+    }
+
+    private fun createNotificationChannel() {
+        val notificationChannel = NotificationChannel(
+            NOTIFICATION_CHANNEL_ID,
+            NOTIFICATION_CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "Shows the ongoing timer"
+            // Vibration is handled by the alerts, not the channel itself for ongoing
+            enableVibration(false)
+        }
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(notificationChannel)
+    }
+
+    private fun setupOngoingActivity(initialDurationMillis: Long) {
+        val notificationBuilder = createNotificationBuilder()
+        val notification = notificationBuilder.build()
+        startForeground(NOTIFICATION_ID, notification)
+
+        val ongoingActivityBuilder = OngoingActivity.Builder(applicationContext, NOTIFICATION_ID, notificationBuilder)
+            .setAnimatedIcon(R.mipmap.ic_launcher)
+            .setTouchIntent(createActivityPendingIntent())
+
+        // With version 1.0.0, we cannot reliably set a dynamic status.
+        // The notification's content text will be used as a fallback.
+
+        ongoingActivity = ongoingActivityBuilder.build()
+        ongoingActivity?.apply(applicationContext)
+    }
+
+    private fun createNotificationBuilder(): NotificationCompat.Builder {
+        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText("Timer running...")
+            .setOngoing(true)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            // Add the intent to open the app when the notification is tapped
+            .setContentIntent(createActivityPendingIntent())
+    }
+
+    // Creates PendingIntent to launch your MainActivity
+    private fun createActivityPendingIntent(): PendingIntent {
+        val intent = Intent(this, MainActivity::class.java)
+        return PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    // Helper function to format milliseconds into MM:SS or HH:MM:SS
+    private fun formatTime(millis: Long): String {
+        val totalSeconds = millis / 1000
+        val hours = totalSeconds / 3600
+        val minutes = (totalSeconds % 3600) / 60
+        val seconds = totalSeconds % 60
+
+        return if (hours > 0) {
+            String.format("%02d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            String.format("%02d:%02d", minutes, seconds)
+        }
     }
 }
