@@ -99,6 +99,7 @@ class CountdownService : Service() {
 
             // Timer has started
             smallAlert()
+            updateStatus(timeRemaining)
             try {
                 updateTimes()
                 while (timeRemaining > 1000 && !cancelled) {
@@ -151,14 +152,16 @@ class CountdownService : Service() {
     private fun setupOngoingActivity(initialDurationMillis: Long) {
         val notificationBuilder = createNotificationBuilder()
         val notification = notificationBuilder.build()
-        
-        Log.d("setupOngoingActivity", "Calling startForeground")
+
+        Log.d("TimerDebug", "About to call startForeground.") // ADD THIS
         startForeground(NOTIFICATION_ID, notification)
+        Log.d("TimerDebug", "startForeground finished.")
 
         val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.notification_icon)
-        val ongoingActivityBuilder = OngoingActivity.Builder(applicationContext, NOTIFICATION_ID, notificationBuilder)
-            .setStaticIcon(icon)
-            .setTouchIntent(createActivityPendingIntent())
+        val ongoingActivityBuilder =
+            OngoingActivity.Builder(applicationContext, NOTIFICATION_ID, notificationBuilder)
+                .setStaticIcon(icon)
+                .setTouchIntent(createActivityPendingIntent())
 
         Log.d("setupOngoingActivity", "Building ongoing activity...")
         ongoingActivity = ongoingActivityBuilder.build()
@@ -175,7 +178,8 @@ class CountdownService : Service() {
 
     private fun createNotificationBuilder(): NotificationCompat.Builder {
         val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.notification_icon)
-        val iconCompat = IconCompat.createWithResource(applicationContext, R.drawable.notification_icon)
+        val iconCompat =
+            IconCompat.createWithResource(applicationContext, R.drawable.notification_icon)
 
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setLargeIcon(icon)
