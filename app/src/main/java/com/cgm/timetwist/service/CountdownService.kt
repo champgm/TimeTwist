@@ -41,6 +41,7 @@ class CountdownService : Service() {
     override fun onCreate() {
         super.onCreate()
         vibrator = this.getSystemService(Vibrator::class.java)
+        createNotificationChannel()
     }
 
     private fun bigAlert() {
@@ -89,9 +90,6 @@ class CountdownService : Service() {
             timeRemaining = durationMillis - elapsedTime
         }
 
-        // Create notification channel (needs to be done before building notification)
-        createNotificationChannel()
-
         // Set up Ongoing Activity
         setupOngoingActivity(durationMillis)
 
@@ -139,7 +137,7 @@ class CountdownService : Service() {
         val notificationChannel = NotificationChannel(
             NOTIFICATION_CHANNEL_ID,
             NOTIFICATION_CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_DEFAULT
+            NotificationManager.IMPORTANCE_LOW
         ).apply {
             description = "Shows the ongoing timer"
             // Vibration is handled by the alerts, not the channel itself for ongoing
@@ -156,11 +154,8 @@ class CountdownService : Service() {
         
         Log.d("setupOngoingActivity", "Calling startForeground")
         startForeground(NOTIFICATION_ID, notification)
-        val notificationManager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(NOTIFICATION_ID, notification)
 
-        val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.circle_icon)
+        val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.notification_icon)
         val ongoingActivityBuilder = OngoingActivity.Builder(applicationContext, NOTIFICATION_ID, notificationBuilder)
             .setStaticIcon(icon)
             .setTouchIntent(createActivityPendingIntent())
@@ -179,8 +174,8 @@ class CountdownService : Service() {
     }
 
     private fun createNotificationBuilder(): NotificationCompat.Builder {
-        val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.circle_icon)
-        val iconCompat = IconCompat.createWithResource(applicationContext, R.drawable.circle_icon)
+        val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.notification_icon)
+        val iconCompat = IconCompat.createWithResource(applicationContext, R.drawable.notification_icon)
 
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setLargeIcon(icon)
