@@ -47,7 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 
 private class TriangleShape(private val isTopRight: Boolean) : Shape {
-    val gap =  5f
+    val gap = 5f
     override fun createOutline(
         size: Size,
         layoutDirection: androidx.compose.ui.unit.LayoutDirection,
@@ -57,16 +57,29 @@ private class TriangleShape(private val isTopRight: Boolean) : Shape {
             if (isTopRight) {
                 moveTo(gap, 0f)
                 lineTo(size.width, 0f)
-                lineTo(size.width, size.height-gap)
+                lineTo(size.width, size.height - gap)
             } else {
                 moveTo(0f, gap)
                 lineTo(0f, size.height)
-                lineTo(size.width-gap, size.height)
+                lineTo(size.width - gap, size.height)
             }
             close()
         }
         return Outline.Generic(path)
     }
+}
+
+fun saveDarkMode(context: Context, isDarkMode: Boolean) {
+    val prefs = context.getSharedPreferences("time_twist_preferences", Context.MODE_PRIVATE)
+    with(prefs.edit()) {
+        putBoolean("dark_mode", isDarkMode)
+        apply()
+    }
+}
+
+fun loadDarkMode(context: Context): Boolean {
+    val prefs = context.getSharedPreferences("time_twist_preferences", Context.MODE_PRIVATE)
+    return prefs.getBoolean("dark_mode", false)
 }
 
 @Composable
@@ -75,7 +88,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
 
     TimeTwistTheme {
         var inEditMode by remember { mutableStateOf(false) }
-        var darkMode by remember { mutableStateOf(false) }
+        var darkMode by remember { mutableStateOf(loadDarkMode(context)) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -126,6 +139,7 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                     Button(
                         onClick = {
                             darkMode = !darkMode
+                            saveDarkMode(context, darkMode)
                         },
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = when {
