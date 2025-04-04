@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 class CountdownService : Service() {
     private var sound = false
     private var vibration = false
+    private var intervalStuff = false
     private var cancelled = false
     private var durationMillis = 0L
     private lateinit var vibrator: Vibrator
@@ -62,6 +63,12 @@ class CountdownService : Service() {
             bigAlert()
             return
         }
+        if(!intervalStuff) {
+            Log.d("IntervalStuff", "Interval stuff is FALSE")
+            return
+        }else{
+            Log.d("IntervalStuff", "Interval stuff is true")
+        }
 
         // Alert every 15 seconds if less than 1 minute remaining
         // Otherwise, alert every 5 seconds
@@ -78,6 +85,7 @@ class CountdownService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         sound = intent?.getBooleanExtra("sound", false) ?: false
         vibration = intent?.getBooleanExtra("vibration", false) ?: false
+        intervalStuff = intent?.getBooleanExtra("intervalStuff", false) ?: false
         durationMillis = intent?.getLongExtra("durationMillis", 0L) ?: 0L
         val startTime = intent?.getLongExtra("startTime", 0L) ?: 0L
         var currentTime: Long
@@ -157,7 +165,7 @@ class CountdownService : Service() {
         startForeground(NOTIFICATION_ID, notification)
         Log.d("TimerDebug", "startForeground finished.")
 
-        val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.notification_icon)
+        val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.timer_outline)
         val ongoingActivityBuilder =
             OngoingActivity.Builder(applicationContext, NOTIFICATION_ID, notificationBuilder)
                 .setStaticIcon(icon)
@@ -177,9 +185,9 @@ class CountdownService : Service() {
     }
 
     private fun createNotificationBuilder(): NotificationCompat.Builder {
-        val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.notification_icon)
+        val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.timer_outline)
         val iconCompat =
-            IconCompat.createWithResource(applicationContext, R.drawable.notification_icon)
+            IconCompat.createWithResource(applicationContext, R.drawable.timer_outline)
 
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setLargeIcon(icon)

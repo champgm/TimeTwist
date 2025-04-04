@@ -10,4 +10,5 @@ data class TimeDetails(
     var vibration: Boolean = false,
     var sound: Boolean = false,
     var started: Boolean = false,
+    var intervalStuff: Boolean = true,
 )
