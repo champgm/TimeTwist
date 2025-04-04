@@ -117,7 +117,7 @@ fun EditScreen(timerId: String, navController: NavController, timerViewModel: Ti
                     modifier = Modifier.size(32.dp)
                 ) {
                     Text(
-                        text = if (intervalStuff) "∴" else "∴",
+                        text = "∴",
                         color = if (intervalStuff) Color.Green else Color.Gray,
                         fontSize = 20.sp
                     )

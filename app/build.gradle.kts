@@ -12,8 +12,8 @@ android {
         applicationId = "com.cgm.timetwist"
         minSdk = 33
         targetSdk = 34
-        versionCode = 14
-        versionName = "dark-mode-saves"
+        versionCode = 15
+        versionName = "dark-mode-saves-and-intermittent-toggle"
         vectorDrawables {
             useSupportLibrary = true
         }

@@ -24,6 +24,7 @@ fun saveTimerDetails(context: Context, timerId: String, details: TimeDetails) {
         putBoolean("${timerId}_repeating", details.repeating)
         putBoolean("${timerId}_vibration", details.vibration)
         putBoolean("${timerId}_sound", details.sound)
+        putBoolean("${timerId}_intervalStuff", details.intervalStuff)
         apply()
     }
 }
@@ -34,13 +35,15 @@ fun getTimerDetails(context: Context, timerId: String): TimeDetails? {
     val repeating = prefs.getBoolean("${timerId}_repeating", false)
     val vibration = prefs.getBoolean("${timerId}_vibration", false)
     val sound = prefs.getBoolean("${timerId}_sound", false)
+    val intervalStuff = prefs.getBoolean("${timerId}_intervalStuff", false)
     if (durationMillis != -1L) {
         return TimeDetails(
             timerId,
             durationMillis = durationMillis,
             repeating = repeating,
             vibration = vibration,
-            sound = sound
+            sound = sound,
+            intervalStuff = intervalStuff
         )
     }
     return null
