@@ -157,7 +157,7 @@ class CountdownService : Service() {
         startForeground(NOTIFICATION_ID, notification)
         Log.d("TimerDebug", "startForeground finished.")
 
-        val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.notification_icon)
+        val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.timer_outline)
         val ongoingActivityBuilder =
             OngoingActivity.Builder(applicationContext, NOTIFICATION_ID, notificationBuilder)
                 .setStaticIcon(icon)
@@ -177,9 +177,9 @@ class CountdownService : Service() {
     }
 
     private fun createNotificationBuilder(): NotificationCompat.Builder {
-        val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.notification_icon)
+        val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.timer_outline)
         val iconCompat =
-            IconCompat.createWithResource(applicationContext, R.drawable.notification_icon)
+            IconCompat.createWithResource(applicationContext, R.drawable.timer_outline)
 
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             .setLargeIcon(icon)
