@@ -55,7 +55,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                 durationMillis = 33000L,
                 repeating = false,
                 sound = false,
-                vibration = true
+                vibration = true,
+                intervalStuff = true,
             )
         )
     var timer1: MutableState<TimeDetails> =
@@ -65,7 +66,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                 durationMillis = 5000L,
                 repeating = false,
                 sound = true,
-                vibration = true
+                vibration = true,
+                intervalStuff = true,
             )
         )
     var timer2: MutableState<TimeDetails> =
@@ -75,7 +77,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                 durationMillis = 310000L,
                 repeating = false,
                 sound = true,
-                vibration = true
+                vibration = true,
+                intervalStuff = true,
             )
         )
     private var cachedCoroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext)
@@ -120,7 +123,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                                     timer.value.durationMillis,
                                     timer.value.repeating,
                                     timer.value.sound,
-                                    timer.value.vibration
+                                    timer.value.vibration,
+                                    timer.value.intervalStuff
                                 )
                                 startTimer(timer.value.timerId, context, cachedCoroutineScope)
                             }
@@ -195,7 +199,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                     timer.value.durationMillis,
                     timer.value.repeating,
                     timer.value.sound,
-                    timer.value.vibration
+                    timer.value.vibration,
+                    timer.value.intervalStuff,
                 )
                 updateTimer(timer.value.timerId)
             } else {
@@ -209,7 +214,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
         newDurationMillis: Long,
         newRepeating: Boolean,
         newSound: Boolean,
-        newVibration: Boolean
+        newVibration: Boolean,
+        newIntervalStuff: Boolean,
     ) {
         when (id) {
             "timer0" -> timer0.value =
@@ -217,7 +223,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                     durationMillis = newDurationMillis,
                     repeating = newRepeating,
                     sound = newSound,
-                    vibration = newVibration
+                    vibration = newVibration,
+                    intervalStuff = newIntervalStuff,
                 )
 
             "timer1" -> timer1.value =
@@ -225,7 +232,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                     durationMillis = newDurationMillis,
                     repeating = newRepeating,
                     sound = newSound,
-                    vibration = newVibration
+                    vibration = newVibration,
+                    intervalStuff = newIntervalStuff,
                 )
 
             "timer2" -> timer2.value =
@@ -233,7 +241,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                     durationMillis = newDurationMillis,
                     repeating = newRepeating,
                     sound = newSound,
-                    vibration = newVibration
+                    vibration = newVibration,
+                    intervalStuff = newIntervalStuff,
                 )
 
             else -> throw IllegalArgumentException("Invalid timerId")
@@ -247,7 +256,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                 durationMillis = newDurationMillis,
                 repeating = newRepeating,
                 sound = newSound,
-                vibration = newVibration
+                vibration = newVibration,
+                intervalStuff = newIntervalStuff,
             )
         )
     }
@@ -258,7 +268,8 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
         durationMillis: Long,
         repeating: Boolean,
         sound: Boolean,
-        vibration: Boolean
+        vibration: Boolean,
+        intervalStuff: Boolean,
     ) {
         cachedCoroutineScope = coroutineScope
         val startTime = System.currentTimeMillis()
@@ -269,6 +280,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
             intent.putExtra("repeating", repeating)
             intent.putExtra("sound", sound)
             intent.putExtra("vibration", vibration)
+            intent.putExtra("intervalStuff", intervalStuff)
             context.startService(intent)
         }
     }

@@ -53,6 +53,7 @@ fun EditScreen(timerId: String, navController: NavController, timerViewModel: Ti
     val secondsString = if (seconds < 10) "0$seconds" else "$seconds"
     var repeating by remember { mutableStateOf(timer.repeating) }
     var vibration by remember { mutableStateOf(timer.vibration) }
+    var intervalStuff by remember { mutableStateOf(timer.intervalStuff) }
     var sound by remember { mutableStateOf(timer.sound) }
 
     // The state for focused field
@@ -64,153 +65,156 @@ fun EditScreen(timerId: String, navController: NavController, timerViewModel: Ti
             .requestFocus()
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colors.background),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top,
+        contentAlignment = Alignment.Center
     ) {
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top,
-            modifier = Modifier
-                .padding(top = 20.dp, bottom = 8.dp)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Button(
-                onClick = { repeating = !repeating },
-                colors = ButtonDefaults.buttonColors(backgroundColor = Color.Black),
-//                modifier = Modifier
-//                    .size(36.dp)
+            // Top row with buttons
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(0.dp),
+                verticalAlignment = Alignment.Top,
             ) {
-                Text(
-                    text = "↻",
-                    color = if (repeating) Color.Green else Color.White,
-                    fontSize = 20.sp
-                )
-            }
-            Button(
-                onClick = { sound = !sound },
-                colors = ButtonDefaults.buttonColors(backgroundColor = Color.Black),
-//                modifier = Modifier
-//                    .size(36.dp)
-            ) {
-                Text(
-                    text = if (sound) "🔊" else "🔇",
-                    color = if (repeating) Color.Green else Color.Gray,
-                    fontSize = 20.sp
-                )
-            }
-            Button(
-                onClick = { vibration = !vibration },
-                colors = ButtonDefaults.buttonColors(backgroundColor = Color.Black),
-//                modifier = Modifier
-//                    .size(36.dp)
-            ) {
-                Text(
-                    text = if (vibration) "📳" else "📴",
-                    color = if (repeating) Color.Green else Color.Gray,
-                    fontSize = 20.sp
-                )
-            }
-        }
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .clickable { focusedField = FocusedField.MINUTES }
-                    .background(
-                        color = if (focusedField == FocusedField.MINUTES) Color.DarkGray else Color.Transparent,
-                        shape = RoundedCornerShape(24.dp),
+                Button(
+                    onClick = { repeating = !repeating },
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.Black),
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Text(
+                        text = "↻",
+                        color = if (repeating) Color.Green else Color.White,
+                        fontSize = 20.sp
                     )
-                    .padding(12.dp)
-            ) {
-                Text(minutesString, fontSize = fontSize)
-            }
-            Text(" ∶ ", fontSize = 20.sp)
-            Box(
-                modifier = Modifier
-                    .clickable { focusedField = FocusedField.SECONDS }
-                    .background(
-                        color = if (focusedField == FocusedField.SECONDS) Color.DarkGray else Color.Transparent,
-                        shape = RoundedCornerShape(24.dp),
+                }
+                Button(
+                    onClick = { sound = !sound },
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.Black),
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Text(
+                        text = if (sound) "🔊" else "🔇",
+                        fontSize = 20.sp
                     )
-                    .focusRequester(focusRequester)
-                    .focusable()
-                    .padding(12.dp)
-                    .onRotaryScrollEvent {
-                        Log.e("Rotary", "Got rotary scroll ${it.verticalScrollPixels}")
-                        if (focusedField == FocusedField.SECONDS) {
-                            seconds += it.verticalScrollPixels.toLong()
-                        } else if (focusedField == FocusedField.MINUTES) {
-                            minutes += it.verticalScrollPixels.toLong()
-                        }
-                        true
+                }
+                Button(
+                    onClick = { vibration = !vibration },
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.Black),
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Text(
+                        text = if (vibration) "📳" else "📴",
+                        fontSize = 20.sp
+                    )
+                }
+                Button(
+                    onClick = { intervalStuff = !intervalStuff },
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.Black),
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Text(
+                        text = if (intervalStuff) "∴" else "∴",
+                        color = if (intervalStuff) Color.Green else Color.Gray,
+                        fontSize = 20.sp
+                    )
+                }
+            }
+
+            // Center row with time
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clickable { focusedField = FocusedField.MINUTES }
+                        .background(
+                            color = if (focusedField == FocusedField.MINUTES) Color.DarkGray else Color.Transparent,
+                            shape = RoundedCornerShape(24.dp),
+                        )
+                        .padding(12.dp)
+                ) {
+                    Text(minutesString, fontSize = fontSize)
+                }
+                Text(" ∶ ", fontSize = 20.sp)
+                Box(
+                    modifier = Modifier
+                        .clickable { focusedField = FocusedField.SECONDS }
+                        .background(
+                            color = if (focusedField == FocusedField.SECONDS) Color.DarkGray else Color.Transparent,
+                            shape = RoundedCornerShape(24.dp),
+                        )
+                        .focusRequester(focusRequester)
+                        .focusable()
+                        .padding(12.dp)
+                        .onRotaryScrollEvent {
+                            Log.e("Rotary", "Got rotary scroll ${it.verticalScrollPixels}")
+                            if (focusedField == FocusedField.SECONDS) {
+                                seconds += it.verticalScrollPixels.toLong()
+                            } else if (focusedField == FocusedField.MINUTES) {
+                                minutes += it.verticalScrollPixels.toLong()
+                            }
+                            true
+                        },
+                ) {
+                    Text(secondsString, fontSize = fontSize)
+                }
+            }
+
+            // Bottom row with action buttons
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Button(
+                    onClick = { navController.popBackStack() },
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.Gray),
+                    shape = RoundedCornerShape(0.dp),
+                    modifier = Modifier
+                        .size(width = 36.dp, height = 36.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = 24.dp,
+                                bottomStart = 24.dp,
+                                topEnd = 0.dp,
+                                bottomEnd = 0.dp,
+                            )
+                        )
+                ) {
+                    Text(text = " ✗", color = Color.Black)
+                }
+                Button(
+                    onClick = {
+                        val newDurationMillis = minutes * 60000L + seconds * 1000L
+                        timerViewModel.updateTimerDuration(
+                            timerId,
+                            newDurationMillis,
+                            repeating,
+                            sound,
+                            vibration,
+                            intervalStuff
+                        )
+                        navController.popBackStack()
                     },
-            ) {
-                Text(secondsString, fontSize = fontSize)
-            }
-        }
-
-//        Row(
-//            horizontalArrangement = Arrangement.SpaceBetween,
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//
-//        }
-
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(
-                onClick = { navController.popBackStack() },
-                colors = ButtonDefaults.buttonColors(backgroundColor = Color.Gray),
-                shape = RoundedCornerShape(0.dp),
-                modifier = Modifier
-                    .padding(top = 8.dp)
-                    .size(width = 36.dp, height = 36.dp)
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 24.dp,
-                            bottomStart = 24.dp,
-                            topEnd = 0.dp,
-                            bottomEnd = 0.dp,
+                    colors = ButtonDefaults.buttonColors(backgroundColor = trackColor),
+                    shape = RoundedCornerShape(0.dp),
+                    modifier = Modifier
+                        .size(width = 36.dp, height = 36.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = 0.dp,
+                                bottomStart = 0.dp,
+                                topEnd = 24.dp,
+                                bottomEnd = 24.dp,
+                            )
                         )
-                    )
-
-            ) {
-                Text(text = " ✗", color = Color.Black)
-            }
-            Button(
-                onClick = {
-                    val newDurationMillis = minutes * 60000L + seconds * 1000L
-                    timerViewModel.updateTimerDuration(
-                        timerId,
-                        newDurationMillis,
-                        repeating,
-                        sound,
-                        vibration
-                    )
-                    navController.popBackStack()
-                },
-                colors = ButtonDefaults.buttonColors(backgroundColor = trackColor),
-                shape = RoundedCornerShape(0.dp),
-                modifier = Modifier
-                    .padding(top = 8.dp)
-                    .size(width = 36.dp, height = 36.dp)
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 0.dp,
-                            bottomStart = 0.dp,
-                            topEnd = 24.dp,
-                            bottomEnd = 24.dp,
-                        )
-                    )
-            ) {
-                Text(text = "✓", color = Color.Black)
+                ) {
+                    Text(text = "✓", color = Color.Black)
+                }
             }
         }
     }
