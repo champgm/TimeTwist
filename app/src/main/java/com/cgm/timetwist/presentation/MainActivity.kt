@@ -22,7 +22,7 @@ import com.cgm.timetwist.VibrationManager
 import com.cgm.timetwist.ui.EditScreen
 import com.cgm.timetwist.ui.WearApp
 
-val buttonPadding = 2.dp
+val buttonPadding = 1.dp
 val googleYellow = Color(0xFFFBBC05)
 val googleRed = Color(0xFFEA4335)
 val googleGreen = Color(0xFF34A853)

@@ -37,6 +37,8 @@ class CountdownService : Service() {
         private const val NOTIFICATION_CHANNEL_ID = "CountdownServiceChannel"
         private const val NOTIFICATION_CHANNEL_NAME = "Countdown Service"
         private const val NOTIFICATION_ID = 83210
+        private const val SMALL_ALERT_INTERVAL = 3
+        private const val BIG_ALERT_INTERVAL = 10
     }
 
     override fun onCreate() {
@@ -72,7 +74,7 @@ class CountdownService : Service() {
 
         // Alert every 15 seconds if less than 1 minute remaining
         // Otherwise, alert every 5 seconds
-        val everyXSeconds = if (timeRemaining < 60000) 5 else 15
+        val everyXSeconds = if (timeRemaining < 60000) SMALL_ALERT_INTERVAL else BIG_ALERT_INTERVAL
         val secondsLeft = timeRemaining / 1000L
 
         // Check if it's time to alert

@@ -47,7 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 
 private class TriangleShape(private val isTopRight: Boolean) : Shape {
-    val gap = 5f
+    val gap = 3f
     override fun createOutline(
         size: Size,
         layoutDirection: androidx.compose.ui.unit.LayoutDirection,
