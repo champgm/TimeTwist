@@ -6,16 +6,53 @@ import android.content.Intent
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
-import kotlinx.coroutines.Job
 import androidx.lifecycle.viewModelScope
 import com.cgm.timetwist.service.CountdownService
 import com.cgm.timetwist.service.TimeDetails
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.coroutines.EmptyCoroutineContext
 
 private const val TIME_TWIST_PREFERENCES = "time_twist_preferences"
+
+internal data class TimerServiceRequest(
+    val startTime: Long,
+    val durationMillis: Long,
+    val repeating: Boolean,
+    val sound: Boolean,
+    val vibration: Boolean,
+    val intervalStuff: Boolean,
+)
+
+internal interface TimerServiceController {
+    fun start(context: Context, coroutineScope: CoroutineScope, request: TimerServiceRequest)
+    fun stop(context: Context, coroutineScope: CoroutineScope)
+}
+
+internal object AndroidTimerServiceController : TimerServiceController {
+    override fun start(
+        context: Context,
+        coroutineScope: CoroutineScope,
+        request: TimerServiceRequest,
+    ) {
+        coroutineScope.launch {
+            val intent = Intent(context, CountdownService::class.java)
+            intent.putExtra("startTime", request.startTime)
+            intent.putExtra("durationMillis", request.durationMillis)
+            intent.putExtra("repeating", request.repeating)
+            intent.putExtra("sound", request.sound)
+            intent.putExtra("vibration", request.vibration)
+            intent.putExtra("intervalStuff", request.intervalStuff)
+            context.startService(intent)
+        }
+    }
+
+    override fun stop(context: Context, coroutineScope: CoroutineScope) {
+        context.stopService(Intent(context, CountdownService::class.java))
+    }
+}
 
 fun saveTimerDetails(context: Context, timerId: String, details: TimeDetails) {
     val prefs = context.getSharedPreferences(TIME_TWIST_PREFERENCES, Context.MODE_PRIVATE)
@@ -36,25 +73,37 @@ fun getTimerDetails(context: Context, timerId: String): TimeDetails? {
     val vibration = prefs.getBoolean("${timerId}_vibration", false)
     val sound = prefs.getBoolean("${timerId}_sound", false)
     val intervalStuff = prefs.getBoolean("${timerId}_intervalStuff", false)
-    if (durationMillis != -1L) {
-        return TimeDetails(
-            timerId,
+    return if (durationMillis != -1L) {
+        TimeDetails(
+            timerId = timerId,
             durationMillis = durationMillis,
             repeating = repeating,
             vibration = vibration,
             sound = sound,
             intervalStuff = intervalStuff
         )
+    } else {
+        null
     }
-    return null
 }
 
+class TimerViewModel internal constructor(
+    application: Application,
+    private val timeProvider: () -> Long,
+    private val timerServiceController: TimerServiceController,
+    private val timerCoroutineScope: CoroutineScope?,
+) : AndroidViewModel(application) {
+    constructor(application: Application) : this(
+        application = application,
+        timeProvider = System::currentTimeMillis,
+        timerServiceController = AndroidTimerServiceController,
+        timerCoroutineScope = null,
+    )
 
-class TimerViewModel(application: Application) : AndroidViewModel(application) {
     var timer0: MutableState<TimeDetails> =
         mutableStateOf(
             TimeDetails(
-                "timer0",
+                timerId = "timer0",
                 durationMillis = 33000L,
                 repeating = false,
                 sound = false,
@@ -65,7 +114,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
     var timer1: MutableState<TimeDetails> =
         mutableStateOf(
             TimeDetails(
-                "timer1",
+                timerId = "timer1",
                 durationMillis = 5000L,
                 repeating = false,
                 sound = true,
@@ -76,7 +125,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
     var timer2: MutableState<TimeDetails> =
         mutableStateOf(
             TimeDetails(
-                "timer2",
+                timerId = "timer2",
                 durationMillis = 310000L,
                 repeating = false,
                 sound = true,
@@ -84,12 +133,13 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                 intervalStuff = true,
             )
         )
+
     private var cachedCoroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext)
     private var timerJob: Job? = null
 
     init {
-        startTimers()
         loadTimersFromPrefs()
+        startTimers()
     }
 
     override fun onCleared() {
@@ -111,7 +161,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun startTimers() {
-        timerJob = viewModelScope.launch {
+        timerJob = (timerCoroutineScope ?: viewModelScope).launch {
             while (true) {
                 listOf(timer0, timer1, timer2).forEach { timer ->
                     if (timer.value.started) {
@@ -121,14 +171,6 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
                             stopService(context, cachedCoroutineScope)
                             stopTimer(timer.value.timerId)
                             if (timer.value.repeating) {
-                                startService(
-                                    context, cachedCoroutineScope,
-                                    timer.value.durationMillis,
-                                    timer.value.repeating,
-                                    timer.value.sound,
-                                    timer.value.vibration,
-                                    timer.value.intervalStuff
-                                )
                                 startTimer(timer.value.timerId, context, cachedCoroutineScope)
                             }
                         }
@@ -140,8 +182,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun stopTimers(context: Context) {
-        val intent = Intent(context, CountdownService::class.java)
-        context.stopService(intent)
+        stopService(context, cachedCoroutineScope)
         listOf(timer0, timer1, timer2).forEach { timer ->
             if (timer.value.started) {
                 stopTimer(timer.value.timerId)
@@ -165,7 +206,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
             "timer2" -> timer2
             else -> throw IllegalArgumentException("Invalid timerId")
         }
-        val currentTime = System.currentTimeMillis()
+        val currentTime = timeProvider()
         val elapsedTime = currentTime - timer.value.startTime
         val timeRemaining = timer.value.durationMillis - elapsedTime
 
@@ -182,9 +223,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
             "timer2" -> timer2
             else -> throw IllegalArgumentException("Invalid timerId")
         }
-        timer.value = timer.value.copy(
-            started = false
-        )
+        timer.value = timer.value.copy(started = false)
     }
 
     fun startTimer(startTimerId: String, context: Context, coroutineScope: CoroutineScope) {
@@ -192,18 +231,20 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
         stopService(context, coroutineScope)
         listOf(timer0, timer1, timer2).forEach { timer ->
             if (timer.value.timerId == startTimerId) {
+                val startTime = timeProvider()
                 timer.value = timer.value.copy(
-                    startTime = System.currentTimeMillis(),
+                    startTime = startTime,
                     started = true
                 )
                 startService(
-                    context,
-                    coroutineScope,
-                    timer.value.durationMillis,
-                    timer.value.repeating,
-                    timer.value.sound,
-                    timer.value.vibration,
-                    timer.value.intervalStuff,
+                    context = context,
+                    coroutineScope = coroutineScope,
+                    startTime = startTime,
+                    durationMillis = timer.value.durationMillis,
+                    repeating = timer.value.repeating,
+                    sound = timer.value.sound,
+                    vibration = timer.value.vibration,
+                    intervalStuff = timer.value.intervalStuff,
                 )
                 updateTimer(timer.value.timerId)
             } else {
@@ -252,10 +293,10 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
         }
         val context = getApplication<Application>().applicationContext
         saveTimerDetails(
-            context,
-            id,
-            TimeDetails(
-                id,
+            context = context,
+            timerId = id,
+            details = TimeDetails(
+                timerId = id,
                 durationMillis = newDurationMillis,
                 repeating = newRepeating,
                 sound = newSound,
@@ -268,6 +309,7 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
     private fun startService(
         context: Context,
         coroutineScope: CoroutineScope,
+        startTime: Long,
         durationMillis: Long,
         repeating: Boolean,
         sound: Boolean,
@@ -275,23 +317,22 @@ class TimerViewModel(application: Application) : AndroidViewModel(application) {
         intervalStuff: Boolean,
     ) {
         cachedCoroutineScope = coroutineScope
-        val startTime = System.currentTimeMillis()
-        coroutineScope.launch {
-            val intent = Intent(context, CountdownService::class.java)
-            intent.putExtra("startTime", startTime)
-            intent.putExtra("durationMillis", durationMillis)
-            intent.putExtra("repeating", repeating)
-            intent.putExtra("sound", sound)
-            intent.putExtra("vibration", vibration)
-            intent.putExtra("intervalStuff", intervalStuff)
-            context.startService(intent)
-        }
+        timerServiceController.start(
+            context = context,
+            coroutineScope = coroutineScope,
+            request = TimerServiceRequest(
+                startTime = startTime,
+                durationMillis = durationMillis,
+                repeating = repeating,
+                sound = sound,
+                vibration = vibration,
+                intervalStuff = intervalStuff,
+            )
+        )
     }
 
     private fun stopService(context: Context, coroutineScope: CoroutineScope) {
         cachedCoroutineScope = coroutineScope
-        val intent = Intent(context, CountdownService::class.java)
-        context.stopService(intent)
+        timerServiceController.stop(context, coroutineScope)
     }
-
 }

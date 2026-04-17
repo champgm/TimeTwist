@@ -95,7 +95,7 @@ fun rotatedAngleToTimeValue(
     val timeValue = ((rotatedAngle / (2 * Math.PI)) * 60)
 
     // Ensure timeValue stays within [0, 60)
-    val wrappedTimeValue = if (timeValue < 0) (timeValue + 60) else timeValue
+    val wrappedTimeValue = ((timeValue % 60) + 60) % 60
     return wrappedTimeValue
 }
 

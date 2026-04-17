@@ -16,16 +16,18 @@ class CircularSliderTest {
     fun `timeValueToPosition should calculate correct position`() {
         val center = DoubleOffset(50.0, 50.0)
         val trackRadius = 50.0
-        val draggerRadius = 0.0 // Set draggerRadius to 0 to simplify the test
+        val draggerRadius = 0.0
 
         var timeValue = 15.0
         var position = timeValueToPosition(timeValue, center, trackRadius, draggerRadius)
         assertThat(position.x).isCloseTo(100.0, offset(0.1))
         assertThat(position.y).isCloseTo(50.0, offset(0.1))
+
         timeValue = 30.0
         position = timeValueToPosition(timeValue, center, trackRadius, draggerRadius)
         assertThat(position.x).isCloseTo(50.0, offset(0.1))
         assertThat(position.y).isCloseTo(100.0, offset(0.1))
+
         timeValue = 45.0
         position = timeValueToPosition(timeValue, center, trackRadius, draggerRadius)
         assertThat(position.x).isCloseTo(0.0, offset(0.1))
@@ -78,12 +80,31 @@ class CircularSliderTest {
 
     @Test
     fun `rotatedAngleToTimeValue should calculate correct time value`() {
-        val timeValue1 = rotatedAngleToTimeValue((Math.PI / 2.0))
-        assertThat(timeValue1).isCloseTo(15.0, offset(0.1))
-        val timeValue2 = rotatedAngleToTimeValue(Math.PI)
-        assertThat(timeValue2).isCloseTo(30.0, offset(0.1))
-        val timeValue3 = rotatedAngleToTimeValue(Math.PI * 1.5)
-        assertThat(timeValue3).isCloseTo(45.0, offset(0.1))
+        assertThat(rotatedAngleToTimeValue(Math.PI / 2.0)).isCloseTo(15.0, offset(0.1))
+        assertThat(rotatedAngleToTimeValue(Math.PI)).isCloseTo(30.0, offset(0.1))
+        assertThat(rotatedAngleToTimeValue(Math.PI * 1.5)).isCloseTo(45.0, offset(0.1))
+    }
+
+    @Test
+    fun `rotatedAngleToTimeValue should wrap angles below zero and above one rotation`() {
+        assertThat(rotatedAngleToTimeValue(-Math.PI / 2)).isCloseTo(45.0, offset(0.1))
+        assertThat(rotatedAngleToTimeValue((2 * Math.PI) + (Math.PI / 2))).isCloseTo(15.0, offset(0.1))
+    }
+
+    @Test
+    fun `time value conversion should round trip with non zero dragger radius`() {
+        val center = DoubleOffset(50.0, 50.0)
+        val trackRadius = 36.0
+        val draggerRadius = 6.0
+        val values = listOf(0.0, 7.5, 15.0, 29.5, 45.0, 59.5)
+
+        values.forEach { timeValue ->
+            val position = timeValueToPosition(timeValue, center, trackRadius, draggerRadius)
+            val rotatedAngle = positionToRotatedAngle(position, center, draggerRadius)
+            val roundTripValue = rotatedAngleToTimeValue(rotatedAngle)
+
+            assertThat(roundTripValue).isCloseTo(timeValue, offset(0.2))
+        }
     }
 
     @Test

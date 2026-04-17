@@ -1,6 +1,6 @@
 ---
 name: time-implement
-description: Implement phases from a phased plan under `notes/PLAN_NAME/` with strict repo safety and type-safety constraints. Use when asked to execute planning outputs (index plus numbered phase files) in code, including locating referenced symbols, applying checklist edits in order, updating tests, running `check_and_test.py`, and reporting results with changed files and completion status.
+description: Implement phases from a phased plan under `notes/PLAN_NAME/`. Use when asked to execute planning outputs (index plus numbered phase files) in code, including locating referenced symbols, applying checklist edits in order, updating tests, running `check_and_test.py`, and reporting results with changed files and completion status.
 ---
 
 # Shaman Implement

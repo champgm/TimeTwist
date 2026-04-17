@@ -23,6 +23,71 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+internal const val SMALL_ALERT_INTERVAL_SECONDS = 5L
+internal const val BIG_ALERT_INTERVAL_SECONDS = 15L
+internal const val INTERMITTENT_ALERT_THRESHOLD_MILLIS = 30000L
+private const val COUNTDOWN_TICK_MILLIS = 1000L
+
+internal enum class CountdownAlert {
+    NONE,
+    SMALL,
+    BIG,
+}
+
+internal interface TimerAlerter {
+    fun smallAlert(sound: Boolean, vibration: Boolean)
+    fun bigAlert(sound: Boolean, vibration: Boolean)
+}
+
+internal object DeviceTimerAlerter : TimerAlerter {
+    override fun smallAlert(sound: Boolean, vibration: Boolean) {
+        if (sound) SoundPoolManager.playClickSound()
+        if (vibration) VibrationManager.vibrateClick()
+    }
+
+    override fun bigAlert(sound: Boolean, vibration: Boolean) {
+        if (sound) SoundPoolManager.playCrunchSound()
+        if (vibration) VibrationManager.vibrateHeavyClick()
+    }
+}
+
+internal fun formatCountdownTime(millis: Long): String {
+    val totalSeconds = millis / 1000
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+
+    return if (hours > 0) {
+        String.format("%02d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format("%02d:%02d", minutes, seconds)
+    }
+}
+
+internal fun decideCountdownAlert(
+    timeRemaining: Long,
+    intervalStuff: Boolean,
+): CountdownAlert {
+    if (timeRemaining <= 0L) {
+        return CountdownAlert.BIG
+    }
+    if (!intervalStuff) {
+        return CountdownAlert.NONE
+    }
+
+    val alertIntervalSeconds =
+        if (timeRemaining <= INTERMITTENT_ALERT_THRESHOLD_MILLIS) {
+            SMALL_ALERT_INTERVAL_SECONDS
+        } else {
+            BIG_ALERT_INTERVAL_SECONDS
+        }
+    val secondsLeft = timeRemaining / 1000L
+    return if (secondsLeft > 0 && secondsLeft % alertIntervalSeconds == 0L) {
+        CountdownAlert.SMALL
+    } else {
+        CountdownAlert.NONE
+    }
+}
 
 class CountdownService : Service() {
     private var sound = false
@@ -32,13 +97,14 @@ class CountdownService : Service() {
     private var durationMillis = 0L
     private lateinit var vibrator: Vibrator
     private var ongoingActivity: OngoingActivity? = null
+    internal var timeProvider: () -> Long = System::currentTimeMillis
+    internal var timerAlerter: TimerAlerter = DeviceTimerAlerter
+    internal var serviceScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
     companion object {
         private const val NOTIFICATION_CHANNEL_ID = "CountdownServiceChannel"
         private const val NOTIFICATION_CHANNEL_NAME = "Countdown Service"
         private const val NOTIFICATION_ID = 83210
-        private const val SMALL_ALERT_INTERVAL = 3
-        private const val BIG_ALERT_INTERVAL = 10
     }
 
     override fun onCreate() {
@@ -48,40 +114,33 @@ class CountdownService : Service() {
     }
 
     private fun bigAlert() {
-        if (sound) SoundPoolManager.playCrunchSound()
-        if (vibration) VibrationManager.vibrateHeavyClick()
+        timerAlerter.bigAlert(sound = sound, vibration = vibration)
         Log.d("VibrationTest", "Big alert triggered")
     }
 
     private fun smallAlert() {
-        if (sound) SoundPoolManager.playClickSound()
-        if (vibration) VibrationManager.vibrateClick()
+        timerAlerter.smallAlert(sound = sound, vibration = vibration)
         Log.d("VibrationTest", "Small alert triggered")
     }
 
-    private fun alertDevice(context: Context, timeRemaining: Long) {
-        // Alert if timer is done
-        if (timeRemaining <= 0) {
-            bigAlert()
-            return
+    internal fun alertDecision(timeRemaining: Long): CountdownAlert {
+        return decideCountdownAlert(timeRemaining = timeRemaining, intervalStuff = intervalStuff)
+    }
+
+    private fun alertDevice(timeRemaining: Long): CountdownAlert {
+        return when (val alert = alertDecision(timeRemaining)) {
+            CountdownAlert.BIG -> {
+                bigAlert()
+                alert
+            }
+
+            CountdownAlert.SMALL -> {
+                smallAlert()
+                alert
+            }
+
+            CountdownAlert.NONE -> alert
         }
-        if(!intervalStuff) {
-            Log.d("IntervalStuff", "Interval stuff is FALSE")
-            return
-        }else{
-            Log.d("IntervalStuff", "Interval stuff is true")
-        }
-
-        // Alert every 15 seconds if less than 1 minute remaining
-        // Otherwise, alert every 5 seconds
-        val everyXSeconds = if (timeRemaining < 60000) SMALL_ALERT_INTERVAL else BIG_ALERT_INTERVAL
-        val secondsLeft = timeRemaining / 1000L
-
-        // Check if it's time to alert
-        val shouldAlert = secondsLeft > 0 && (secondsLeft % everyXSeconds) == 0L
-        if (!shouldAlert) return
-
-        smallAlert()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -95,36 +154,30 @@ class CountdownService : Service() {
         var timeRemaining = 0L
 
         fun updateTimes() {
-            currentTime = System.currentTimeMillis()
+            currentTime = timeProvider()
             elapsedTime = currentTime - startTime
             timeRemaining = durationMillis - elapsedTime
         }
 
-        // Set up Ongoing Activity
+        updateTimes()
         setupOngoingActivity(durationMillis)
 
-        // This is where the active timer is counted down
-        CoroutineScope(Dispatchers.IO).launch {
+        serviceScope.launch {
             cancelled = false
-
-            // Timer has started
             smallAlert()
             updateStatus(timeRemaining)
             try {
-                updateTimes()
-                while (timeRemaining > 1000 && !cancelled) {
+                while (timeRemaining > COUNTDOWN_TICK_MILLIS && !cancelled) {
+                    delay(COUNTDOWN_TICK_MILLIS)
                     updateTimes()
                     updateStatus(timeRemaining)
-                    alertDevice(this@CountdownService, timeRemaining)
-                    delay(1000)
+                    alertDevice(timeRemaining)
                 }
 
-                // Time has elapsed
                 if (!cancelled) {
-                    alertDevice(this@CountdownService, 0)
+                    alertDevice(0)
                 }
             } finally {
-                // OngoingActivity handles stopping foreground implicitly when status is cleared
                 stopSelf()
             }
         }
@@ -151,7 +204,6 @@ class CountdownService : Service() {
             NotificationManager.IMPORTANCE_LOW
         ).apply {
             description = "Shows the ongoing timer"
-            // Vibration is handled by the alerts, not the channel itself for ongoing
             enableVibration(false)
         }
         val notificationManager =
@@ -163,9 +215,7 @@ class CountdownService : Service() {
         val notificationBuilder = createNotificationBuilder()
         val notification = notificationBuilder.build()
 
-        Log.d("TimerDebug", "About to call startForeground.") // ADD THIS
         startForeground(NOTIFICATION_ID, notification)
-        Log.d("TimerDebug", "startForeground finished.")
 
         val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.timer_outline)
         val ongoingActivityBuilder =
@@ -173,17 +223,9 @@ class CountdownService : Service() {
                 .setStaticIcon(icon)
                 .setTouchIntent(createActivityPendingIntent())
 
-        Log.d("setupOngoingActivity", "Building ongoing activity...")
         ongoingActivity = ongoingActivityBuilder.build()
-        Log.d("setupOngoingActivity", "Ongoing activity built")
-
-        Log.d("setupOngoingActivity", "Applying context...")
         ongoingActivity?.apply(applicationContext)
-        Log.d("setupOngoingActivity", "Context applied")
-
-        Log.d("setupOngoingActivity", "Updating status...")
         updateStatus(initialDurationMillis)
-        Log.d("setupOngoingActivity", "Status updated")
     }
 
     private fun createNotificationBuilder(): NotificationCompat.Builder {
@@ -199,11 +241,9 @@ class CountdownService : Service() {
             .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            // Add the intent to open the app when the notification is tapped
             .setContentIntent(createActivityPendingIntent())
     }
 
-    // Creates PendingIntent to launch your MainActivity
     private fun createActivityPendingIntent(): PendingIntent {
         val intent = Intent(this, MainActivity::class.java)
         return PendingIntent.getActivity(
@@ -214,25 +254,10 @@ class CountdownService : Service() {
         )
     }
 
-    // Helper function to format milliseconds into MM:SS or HH:MM:SS
-    private fun formatTime(millis: Long): String {
-        val totalSeconds = millis / 1000
-        val hours = totalSeconds / 3600
-        val minutes = (totalSeconds % 3600) / 60
-        val seconds = totalSeconds % 60
-
-        return if (hours > 0) {
-            String.format("%02d:%02d:%02d", hours, minutes, seconds)
-        } else {
-            String.format("%02d:%02d", minutes, seconds)
-        }
-    }
-
     private fun updateStatus(timeRemainingMillis: Long) {
-        val timeStr = formatTime(timeRemainingMillis)
         val status = Status.Builder()
             .addTemplate("Time left: #time#")
-            .addPart("time", Status.TextPart(timeStr))
+            .addPart("time", Status.TextPart(formatCountdownTime(timeRemainingMillis)))
             .build()
         ongoingActivity?.update(applicationContext, status)
     }
