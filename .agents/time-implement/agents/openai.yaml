@@ -1,0 +1,4 @@
+interface:
+  display_name: "Time Implement"
+  short_description: "Execute plan phases safely"
+  default_prompt: "Use $time-implement with PLAN_NAME=<name> to implement all phases under notes/<PLAN_NAME>/ in order."
