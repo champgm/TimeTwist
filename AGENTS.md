@@ -16,6 +16,10 @@ Resources are in `app/src/main/res/`, unit tests are in `app/src/test/java/`, sc
 - `adb devices` verifies watch connectivity; `adb -s <ip:port> install -r app/build/outputs/apk/release/app-release.apk` reinstalls a release build on hardware.
 
 Run commands from the repository root.
+Local Android prerequisites:
+- install Android SDK Platform `35`, Build-Tools `35.0.0`, and `platform-tools`
+- ensure `local.properties` points at a valid local SDK path, or set `ANDROID_HOME` / `ANDROID_SDK_ROOT` before running Gradle
+- the checked-in `gradlew` script is expected to run on Unix-like systems without line-ending fixes
 
 ## Coding Style & Naming Conventions
 Use Kotlin with 4-space indentation and keep package names under `com.cgm.timetwist`. Follow existing naming:
@@ -26,7 +30,7 @@ Use Kotlin with 4-space indentation and keep package names under `com.cgm.timetw
 Prefer small Compose functions and keep UI, service, and presentation concerns in their existing directories. No formatter config is checked in, so match surrounding Kotlin style closely before submitting.
 
 ## Testing Guidelines
-The project currently uses JUnit 4 with AssertJ and Mockito for unit tests. Add tests beside the code they cover in `app/src/test/java/...`, and name files `*Test.kt`. Prefer focused tests around timer math, slider behavior, and service logic. Run `./gradlew testDebugUnitTest` before opening a PR.
+The project currently uses JUnit 4 with AssertJ and Mockito for unit tests. Add tests beside the code they cover in `app/src/test/java/...`, and name files `*Test.kt`. Prefer focused tests around timer math, slider behavior, and service logic. Run `./gradlew testDebugUnitTest` before opening a PR. If Gradle cannot resolve the SDK, fix `local.properties` or export `ANDROID_HOME` / `ANDROID_SDK_ROOT` rather than changing build scripts.
 
 ## Commit & Pull Request Guidelines
 Recent history favors short, imperative commit subjects such as `Update a screenshot` or `Save darkmode & toggle intermittent (#3)`. Keep commits focused, describe behavior changes rather than implementation trivia, and reference issues when applicable.
