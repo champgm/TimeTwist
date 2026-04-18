@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shaman Audit"
+  short_description: "Audit phased implementation"
+  default_prompt: "Use $shaman-audit with PLAN_NAME=<name> to audit implementation against notes/<PLAN_NAME>/, findings first."

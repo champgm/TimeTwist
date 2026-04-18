@@ -82,4 +82,19 @@ class TimerPreferencesTest {
         assertThat(restored?.sound).isTrue()
         assertThat(restored?.intervalStuff).isTrue()
     }
+
+    @Test
+    fun `transition preferences should default to default states`() {
+        assertThat(getTransitionState0To2(context)).isEqualTo(TransitionState0To2.DEFAULT)
+        assertThat(getTransitionState1To2(context)).isEqualTo(TransitionState1To2.DEFAULT)
+    }
+
+    @Test
+    fun `transition preferences should round trip persisted values`() {
+        saveTransitionState0To2(context, TransitionState0To2.ZERO_TWO_REPEAT)
+        saveTransitionState1To2(context, TransitionState1To2.TWO_TO_ONE)
+
+        assertThat(getTransitionState0To2(context)).isEqualTo(TransitionState0To2.ZERO_TWO_REPEAT)
+        assertThat(getTransitionState1To2(context)).isEqualTo(TransitionState1To2.TWO_TO_ONE)
+    }
 }

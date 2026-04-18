@@ -46,7 +46,7 @@ class TimerViewModelTest {
                 sound = false,
                 vibration = true,
                 intervalStuff = true,
-            )
+            ),
         )
         assertThat(viewModel.timer1.value).isEqualTo(
             TimeDetails(
@@ -56,7 +56,7 @@ class TimerViewModelTest {
                 sound = true,
                 vibration = true,
                 intervalStuff = true,
-            )
+            ),
         )
         assertThat(viewModel.timer2.value).isEqualTo(
             TimeDetails(
@@ -66,12 +66,14 @@ class TimerViewModelTest {
                 sound = true,
                 vibration = true,
                 intervalStuff = true,
-            )
+            ),
         )
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.DEFAULT)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.DEFAULT)
     }
 
     @Test
-    fun `constructor should load persisted timers`() = runTest {
+    fun `constructor should load persisted timers and transitions`() = runTest {
         saveTimerDetails(
             context = context,
             timerId = "timer1",
@@ -82,8 +84,10 @@ class TimerViewModelTest {
                 vibration = false,
                 sound = false,
                 intervalStuff = false,
-            )
+            ),
         )
+        saveTransitionState0To2(context, TransitionState0To2.TWO_TO_ZERO)
+        saveTransitionState1To2(context, TransitionState1To2.ONE_TWO_REPEAT)
 
         val viewModel = createViewModel(this)
 
@@ -92,6 +96,22 @@ class TimerViewModelTest {
         assertThat(viewModel.timer1.value.vibration).isFalse()
         assertThat(viewModel.timer1.value.sound).isFalse()
         assertThat(viewModel.timer1.value.intervalStuff).isFalse()
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.TWO_TO_ZERO)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.ONE_TWO_REPEAT)
+    }
+
+    @Test
+    fun `constructor should default invalid transition persistence`() = runTest {
+        context.getSharedPreferences("time_twist_preferences", Context.MODE_PRIVATE)
+            .edit()
+            .putString("transition_0_2", "BROKEN")
+            .putString("transition_1_2", "BROKEN")
+            .commit()
+
+        val viewModel = createViewModel(this)
+
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.DEFAULT)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.DEFAULT)
     }
 
     @Test
@@ -152,6 +172,7 @@ class TimerViewModelTest {
         assertThat(request.sound).isTrue()
         assertThat(request.vibration).isTrue()
         assertThat(request.intervalStuff).isTrue()
+        assertThat(request.suppressStartAlert).isFalse()
     }
 
     @Test
@@ -169,18 +190,78 @@ class TimerViewModelTest {
     }
 
     @Test
+    fun `cycleTransition0To2 should visit every state and persist it`() = runTest {
+        val viewModel = createViewModel(this)
+
+        viewModel.cycleTransition0To2()
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.ZERO_TO_TWO)
+        assertThat(getTransitionState0To2(context)).isEqualTo(TransitionState0To2.ZERO_TO_TWO)
+
+        viewModel.cycleTransition0To2()
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.TWO_TO_ZERO)
+
+        viewModel.cycleTransition0To2()
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.ZERO_TWO_REPEAT)
+
+        viewModel.cycleTransition0To2()
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.DEFAULT)
+    }
+
+    @Test
+    fun `cycleTransition1To2 should visit every state and persist it`() = runTest {
+        val viewModel = createViewModel(this)
+
+        viewModel.cycleTransition1To2()
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.ONE_TO_TWO)
+        assertThat(getTransitionState1To2(context)).isEqualTo(TransitionState1To2.ONE_TO_TWO)
+
+        viewModel.cycleTransition1To2()
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.TWO_TO_ONE)
+
+        viewModel.cycleTransition1To2()
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.ONE_TWO_REPEAT)
+
+        viewModel.cycleTransition1To2()
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.DEFAULT)
+    }
+
+    @Test
+    fun `setting repeat on 1 to 2 should reset repeat on 0 to 2`() = runTest {
+        val viewModel = createViewModel(this)
+
+        viewModel.updateTransition0To2(TransitionState0To2.ZERO_TWO_REPEAT)
+        viewModel.updateTransition1To2(TransitionState1To2.ONE_TWO_REPEAT)
+
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.DEFAULT)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.ONE_TWO_REPEAT)
+        assertThat(getTransitionState0To2(context)).isEqualTo(TransitionState0To2.DEFAULT)
+        assertThat(getTransitionState1To2(context)).isEqualTo(TransitionState1To2.ONE_TWO_REPEAT)
+    }
+
+    @Test
+    fun `setting repeat on 0 to 2 should reset repeat on 1 to 2`() = runTest {
+        val viewModel = createViewModel(this)
+
+        viewModel.updateTransition1To2(TransitionState1To2.ONE_TWO_REPEAT)
+        viewModel.updateTransition0To2(TransitionState0To2.ZERO_TWO_REPEAT)
+
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.ZERO_TWO_REPEAT)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.DEFAULT)
+        assertThat(getTransitionState0To2(context)).isEqualTo(TransitionState0To2.ZERO_TWO_REPEAT)
+        assertThat(getTransitionState1To2(context)).isEqualTo(TransitionState1To2.DEFAULT)
+    }
+
+    @Test
     fun `completed non repeating timer should stop`() = runTest {
         val clock = MutableClock(now = 0L)
         val serviceController = RecordingTimerServiceController()
         val viewModel = createViewModel(this, clock, serviceController)
 
-        viewModel.updateTimerDuration(
-            id = "timer0",
-            newDurationMillis = 2_000L,
-            newRepeating = false,
-            newSound = false,
-            newVibration = true,
-            newIntervalStuff = true,
+        configureTimer(
+            viewModel = viewModel,
+            timerId = "timer0",
+            durationMillis = 2_000L,
+            repeating = false,
         )
         viewModel.startTimer("timer0", context, backgroundScope)
 
@@ -200,13 +281,11 @@ class TimerViewModelTest {
         val serviceController = RecordingTimerServiceController()
         val viewModel = createViewModel(this, clock, serviceController)
 
-        viewModel.updateTimerDuration(
-            id = "timer2",
-            newDurationMillis = 2_000L,
-            newRepeating = true,
-            newSound = true,
-            newVibration = false,
-            newIntervalStuff = false,
+        configureTimer(
+            viewModel = viewModel,
+            timerId = "timer2",
+            durationMillis = 2_000L,
+            repeating = true,
         )
         viewModel.startTimer("timer2", context, backgroundScope)
 
@@ -220,6 +299,170 @@ class TimerViewModelTest {
         assertThat(viewModel.timer2.value.repeating).isTrue()
         assertThat(serviceController.startRequests).hasSize(2)
         assertThat(serviceController.startRequests.last().durationMillis).isEqualTo(2_000L)
+        assertThat(serviceController.startRequests.last().suppressStartAlert).isFalse()
+    }
+
+    @Test
+    fun `timer0 completion should start timer2 for zero to two`() = runTest {
+        val clock = MutableClock(now = 0L)
+        val serviceController = RecordingTimerServiceController()
+        val viewModel = createViewModel(this, clock, serviceController)
+        viewModel.updateTransition0To2(TransitionState0To2.ZERO_TO_TWO)
+        configureTimer(viewModel, "timer0", 2_000L, repeating = false)
+
+        viewModel.startTimer("timer0", context, backgroundScope)
+
+        clock.now = 2_000L
+        advanceTimeBy(2_000L)
+        runCurrent()
+
+        assertActiveTimer(viewModel, "timer2")
+        assertThat(serviceController.startRequests).hasSize(2)
+        assertThat(serviceController.startRequests.last().durationMillis).isEqualTo(viewModel.timer2.value.durationMillis)
+        assertThat(serviceController.startRequests.last().suppressStartAlert).isTrue()
+    }
+
+    @Test
+    fun `timer2 completion should start timer0 for two to zero`() = runTest {
+        val clock = MutableClock(now = 0L)
+        val serviceController = RecordingTimerServiceController()
+        val viewModel = createViewModel(this, clock, serviceController)
+        viewModel.updateTransition0To2(TransitionState0To2.TWO_TO_ZERO)
+        configureTimer(viewModel, "timer2", 2_000L, repeating = false)
+
+        viewModel.startTimer("timer2", context, backgroundScope)
+
+        clock.now = 2_000L
+        advanceTimeBy(2_000L)
+        runCurrent()
+
+        assertActiveTimer(viewModel, "timer0")
+        assertThat(serviceController.startRequests.last().suppressStartAlert).isTrue()
+    }
+
+    @Test
+    fun `zero two repeat should alternate between timer0 and timer2`() = runTest {
+        val clock = MutableClock(now = 0L)
+        val serviceController = RecordingTimerServiceController()
+        val viewModel = createViewModel(this, clock, serviceController)
+        viewModel.updateTransition0To2(TransitionState0To2.ZERO_TWO_REPEAT)
+        configureTimer(viewModel, "timer0", 2_000L, repeating = false)
+        configureTimer(viewModel, "timer2", 2_000L, repeating = false)
+
+        viewModel.startTimer("timer0", context, backgroundScope)
+        clock.now = 2_000L
+        advanceTimeBy(2_000L)
+        runCurrent()
+        assertActiveTimer(viewModel, "timer2")
+
+        clock.now = 4_000L
+        advanceTimeBy(2_000L)
+        runCurrent()
+        assertActiveTimer(viewModel, "timer0")
+    }
+
+    @Test
+    fun `one two repeat should alternate between timer1 and timer2`() = runTest {
+        val clock = MutableClock(now = 0L)
+        val serviceController = RecordingTimerServiceController()
+        val viewModel = createViewModel(this, clock, serviceController)
+        viewModel.updateTransition1To2(TransitionState1To2.ONE_TWO_REPEAT)
+        configureTimer(viewModel, "timer1", 2_000L, repeating = false)
+        configureTimer(viewModel, "timer2", 2_000L, repeating = false)
+
+        viewModel.startTimer("timer1", context, backgroundScope)
+        clock.now = 2_000L
+        advanceTimeBy(2_000L)
+        runCurrent()
+        assertActiveTimer(viewModel, "timer2")
+
+        clock.now = 4_000L
+        advanceTimeBy(2_000L)
+        runCurrent()
+        assertActiveTimer(viewModel, "timer1")
+    }
+
+    @Test
+    fun `timer1 completion should start timer2 for one to two`() = runTest {
+        val clock = MutableClock(now = 0L)
+        val serviceController = RecordingTimerServiceController()
+        val viewModel = createViewModel(this, clock, serviceController)
+        viewModel.updateTransition1To2(TransitionState1To2.ONE_TO_TWO)
+        configureTimer(viewModel, "timer1", 2_000L, repeating = false)
+
+        viewModel.startTimer("timer1", context, backgroundScope)
+        clock.now = 2_000L
+        advanceTimeBy(2_000L)
+        runCurrent()
+
+        assertActiveTimer(viewModel, "timer2")
+    }
+
+    @Test
+    fun `timer2 completion should start timer1 for two to one`() = runTest {
+        val clock = MutableClock(now = 0L)
+        val serviceController = RecordingTimerServiceController()
+        val viewModel = createViewModel(this, clock, serviceController)
+        viewModel.updateTransition1To2(TransitionState1To2.TWO_TO_ONE)
+        configureTimer(viewModel, "timer2", 2_000L, repeating = false)
+
+        viewModel.startTimer("timer2", context, backgroundScope)
+        clock.now = 2_000L
+        advanceTimeBy(2_000L)
+        runCurrent()
+
+        assertActiveTimer(viewModel, "timer1")
+    }
+
+    @Test
+    fun `timer2 should choose timer0 when only zero to two rule points away from it`() = runTest {
+        val clock = MutableClock(now = 0L)
+        val serviceController = RecordingTimerServiceController()
+        val viewModel = createViewModel(this, clock, serviceController)
+        viewModel.updateTransition0To2(TransitionState0To2.TWO_TO_ZERO)
+        viewModel.updateTransition1To2(TransitionState1To2.ONE_TO_TWO)
+        configureTimer(viewModel, "timer2", 2_000L, repeating = false)
+
+        viewModel.startTimer("timer2", context, backgroundScope)
+        clock.now = 2_000L
+        advanceTimeBy(2_000L)
+        runCurrent()
+
+        assertActiveTimer(viewModel, "timer0")
+    }
+
+    @Test
+    fun `transition should take precedence over self repeat`() = runTest {
+        val clock = MutableClock(now = 0L)
+        val serviceController = RecordingTimerServiceController()
+        val viewModel = createViewModel(this, clock, serviceController)
+        viewModel.updateTransition0To2(TransitionState0To2.ZERO_TO_TWO)
+        configureTimer(viewModel, "timer0", 2_000L, repeating = true)
+
+        viewModel.startTimer("timer0", context, backgroundScope)
+        clock.now = 2_000L
+        advanceTimeBy(2_000L)
+        runCurrent()
+
+        assertActiveTimer(viewModel, "timer2")
+        assertThat(viewModel.timer0.value.started).isFalse()
+        assertThat(serviceController.startRequests.last().suppressStartAlert).isTrue()
+    }
+
+    @Test
+    fun `self repeat should still work when no outgoing transition applies`() = runTest {
+        val clock = MutableClock(now = 0L)
+        val serviceController = RecordingTimerServiceController()
+        val viewModel = createViewModel(this, clock, serviceController)
+        configureTimer(viewModel, "timer1", 2_000L, repeating = true)
+
+        viewModel.startTimer("timer1", context, backgroundScope)
+        clock.now = 2_000L
+        advanceTimeBy(2_000L)
+        runCurrent()
+
+        assertActiveTimer(viewModel, "timer1")
+        assertThat(serviceController.startRequests.last().suppressStartAlert).isFalse()
     }
 
     private fun createViewModel(
@@ -233,6 +476,28 @@ class TimerViewModelTest {
             timerServiceController = serviceController,
             timerCoroutineScope = scope.backgroundScope,
         )
+    }
+
+    private fun configureTimer(
+        viewModel: TimerViewModel,
+        timerId: String,
+        durationMillis: Long,
+        repeating: Boolean,
+    ) {
+        viewModel.updateTimerDuration(
+            id = timerId,
+            newDurationMillis = durationMillis,
+            newRepeating = repeating,
+            newSound = false,
+            newVibration = true,
+            newIntervalStuff = true,
+        )
+    }
+
+    private fun assertActiveTimer(viewModel: TimerViewModel, activeTimerId: String) {
+        assertThat(viewModel.timer0.value.started).isEqualTo(activeTimerId == "timer0")
+        assertThat(viewModel.timer1.value.started).isEqualTo(activeTimerId == "timer1")
+        assertThat(viewModel.timer2.value.started).isEqualTo(activeTimerId == "timer2")
     }
 
     private fun clearPreferences() {

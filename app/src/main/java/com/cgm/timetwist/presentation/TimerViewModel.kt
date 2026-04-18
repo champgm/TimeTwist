@@ -16,6 +16,22 @@ import kotlinx.coroutines.launch
 import kotlin.coroutines.EmptyCoroutineContext
 
 private const val TIME_TWIST_PREFERENCES = "time_twist_preferences"
+private const val TRANSITION_0_2_KEY = "transition_0_2"
+private const val TRANSITION_1_2_KEY = "transition_1_2"
+
+enum class TransitionState0To2 {
+    DEFAULT,
+    ZERO_TO_TWO,
+    TWO_TO_ZERO,
+    ZERO_TWO_REPEAT,
+}
+
+enum class TransitionState1To2 {
+    DEFAULT,
+    ONE_TO_TWO,
+    TWO_TO_ONE,
+    ONE_TWO_REPEAT,
+}
 
 internal data class TimerServiceRequest(
     val startTime: Long,
@@ -24,6 +40,7 @@ internal data class TimerServiceRequest(
     val sound: Boolean,
     val vibration: Boolean,
     val intervalStuff: Boolean,
+    val suppressStartAlert: Boolean,
 )
 
 internal interface TimerServiceController {
@@ -45,6 +62,7 @@ internal object AndroidTimerServiceController : TimerServiceController {
             intent.putExtra("sound", request.sound)
             intent.putExtra("vibration", request.vibration)
             intent.putExtra("intervalStuff", request.intervalStuff)
+            intent.putExtra("suppressStartAlert", request.suppressStartAlert)
             context.startService(intent)
         }
     }
@@ -85,6 +103,30 @@ fun getTimerDetails(context: Context, timerId: String): TimeDetails? {
     } else {
         null
     }
+}
+
+fun saveTransitionState0To2(context: Context, state: TransitionState0To2) {
+    val prefs = context.getSharedPreferences(TIME_TWIST_PREFERENCES, Context.MODE_PRIVATE)
+    prefs.edit().putString(TRANSITION_0_2_KEY, state.name).apply()
+}
+
+fun getTransitionState0To2(context: Context): TransitionState0To2 {
+    val prefs = context.getSharedPreferences(TIME_TWIST_PREFERENCES, Context.MODE_PRIVATE)
+    val savedValue = prefs.getString(TRANSITION_0_2_KEY, null) ?: return TransitionState0To2.DEFAULT
+    return TransitionState0To2.entries.firstOrNull { it.name == savedValue }
+        ?: TransitionState0To2.DEFAULT
+}
+
+fun saveTransitionState1To2(context: Context, state: TransitionState1To2) {
+    val prefs = context.getSharedPreferences(TIME_TWIST_PREFERENCES, Context.MODE_PRIVATE)
+    prefs.edit().putString(TRANSITION_1_2_KEY, state.name).apply()
+}
+
+fun getTransitionState1To2(context: Context): TransitionState1To2 {
+    val prefs = context.getSharedPreferences(TIME_TWIST_PREFERENCES, Context.MODE_PRIVATE)
+    val savedValue = prefs.getString(TRANSITION_1_2_KEY, null) ?: return TransitionState1To2.DEFAULT
+    return TransitionState1To2.entries.firstOrNull { it.name == savedValue }
+        ?: TransitionState1To2.DEFAULT
 }
 
 class TimerViewModel internal constructor(
@@ -133,6 +175,10 @@ class TimerViewModel internal constructor(
                 intervalStuff = true,
             )
         )
+    var transition0To2: MutableState<TransitionState0To2> =
+        mutableStateOf(TransitionState0To2.DEFAULT)
+    var transition1To2: MutableState<TransitionState1To2> =
+        mutableStateOf(TransitionState1To2.DEFAULT)
 
     private var cachedCoroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext)
     private var timerJob: Job? = null
@@ -158,6 +204,8 @@ class TimerViewModel internal constructor(
                 }
             }
         }
+        transition0To2.value = getTransitionState0To2(context)
+        transition1To2.value = getTransitionState1To2(context)
     }
 
     private fun startTimers() {
@@ -168,10 +216,24 @@ class TimerViewModel internal constructor(
                         updateTimer(timer.value.timerId)
                         if (timer.value.timeRemaining <= 0L) {
                             val context = getApplication<Application>().applicationContext
+                            val completedTimerId = timer.value.timerId
+                            val shouldSelfRepeat = timer.value.repeating
                             stopService(context, cachedCoroutineScope)
-                            stopTimer(timer.value.timerId)
-                            if (timer.value.repeating) {
-                                startTimer(timer.value.timerId, context, cachedCoroutineScope)
+                            stopTimer(completedTimerId)
+                            val nextTimerId = resolveNextTimerId(completedTimerId)
+                            when {
+                                nextTimerId != null -> startTimer(
+                                    startTimerId = nextTimerId,
+                                    context = context,
+                                    coroutineScope = cachedCoroutineScope,
+                                    suppressStartAlert = true,
+                                )
+                                shouldSelfRepeat -> startTimer(
+                                    startTimerId = completedTimerId,
+                                    context = context,
+                                    coroutineScope = cachedCoroutineScope,
+                                    suppressStartAlert = false,
+                                )
                             }
                         }
                     }
@@ -227,6 +289,60 @@ class TimerViewModel internal constructor(
     }
 
     fun startTimer(startTimerId: String, context: Context, coroutineScope: CoroutineScope) {
+        startTimer(
+            startTimerId = startTimerId,
+            context = context,
+            coroutineScope = coroutineScope,
+            suppressStartAlert = false,
+        )
+    }
+
+    fun cycleTransition0To2() {
+        val nextState = when (transition0To2.value) {
+            TransitionState0To2.DEFAULT -> TransitionState0To2.ZERO_TO_TWO
+            TransitionState0To2.ZERO_TO_TWO -> TransitionState0To2.TWO_TO_ZERO
+            TransitionState0To2.TWO_TO_ZERO -> TransitionState0To2.ZERO_TWO_REPEAT
+            TransitionState0To2.ZERO_TWO_REPEAT -> TransitionState0To2.DEFAULT
+        }
+        updateTransition0To2(nextState)
+    }
+
+    fun cycleTransition1To2() {
+        val nextState = when (transition1To2.value) {
+            TransitionState1To2.DEFAULT -> TransitionState1To2.ONE_TO_TWO
+            TransitionState1To2.ONE_TO_TWO -> TransitionState1To2.TWO_TO_ONE
+            TransitionState1To2.TWO_TO_ONE -> TransitionState1To2.ONE_TWO_REPEAT
+            TransitionState1To2.ONE_TWO_REPEAT -> TransitionState1To2.DEFAULT
+        }
+        updateTransition1To2(nextState)
+    }
+
+    internal fun updateTransition0To2(newState: TransitionState0To2) {
+        val context = getApplication<Application>().applicationContext
+        transition0To2.value = newState
+        if (newState == TransitionState0To2.ZERO_TWO_REPEAT) {
+            transition1To2.value = TransitionState1To2.DEFAULT
+            saveTransitionState1To2(context, transition1To2.value)
+        }
+        saveTransitionState0To2(context, transition0To2.value)
+    }
+
+    internal fun updateTransition1To2(newState: TransitionState1To2) {
+        val context = getApplication<Application>().applicationContext
+        transition1To2.value = newState
+        if (newState == TransitionState1To2.ONE_TWO_REPEAT) {
+            transition0To2.value = TransitionState0To2.DEFAULT
+            saveTransitionState0To2(context, transition0To2.value)
+        }
+        saveTransitionState1To2(context, transition1To2.value)
+    }
+
+    private fun startTimer(
+        startTimerId: String,
+        context: Context,
+        coroutineScope: CoroutineScope,
+        suppressStartAlert: Boolean,
+    ) {
         cachedCoroutineScope = coroutineScope
         stopService(context, coroutineScope)
         listOf(timer0, timer1, timer2).forEach { timer ->
@@ -245,6 +361,7 @@ class TimerViewModel internal constructor(
                     sound = timer.value.sound,
                     vibration = timer.value.vibration,
                     intervalStuff = timer.value.intervalStuff,
+                    suppressStartAlert = suppressStartAlert,
                 )
                 updateTimer(timer.value.timerId)
             } else {
@@ -315,6 +432,7 @@ class TimerViewModel internal constructor(
         sound: Boolean,
         vibration: Boolean,
         intervalStuff: Boolean,
+        suppressStartAlert: Boolean,
     ) {
         cachedCoroutineScope = coroutineScope
         timerServiceController.start(
@@ -327,8 +445,46 @@ class TimerViewModel internal constructor(
                 sound = sound,
                 vibration = vibration,
                 intervalStuff = intervalStuff,
+                suppressStartAlert = suppressStartAlert,
             )
         )
+    }
+
+    private fun resolveNextTimerId(completedTimerId: String): String? {
+        return when (completedTimerId) {
+            "timer0" -> when (transition0To2.value) {
+                TransitionState0To2.ZERO_TO_TWO,
+                TransitionState0To2.ZERO_TWO_REPEAT -> "timer2"
+                TransitionState0To2.DEFAULT,
+                TransitionState0To2.TWO_TO_ZERO -> null
+            }
+
+            "timer1" -> when (transition1To2.value) {
+                TransitionState1To2.ONE_TO_TWO,
+                TransitionState1To2.ONE_TWO_REPEAT -> "timer2"
+                TransitionState1To2.DEFAULT,
+                TransitionState1To2.TWO_TO_ONE -> null
+            }
+
+            "timer2" -> resolveTimer2Transition()
+            else -> throw IllegalArgumentException("Invalid timerId")
+        }
+    }
+
+    private fun resolveTimer2Transition(): String? {
+        val routeToTimer0 =
+            transition0To2.value == TransitionState0To2.TWO_TO_ZERO ||
+                transition0To2.value == TransitionState0To2.ZERO_TWO_REPEAT
+        val routeToTimer1 =
+            transition1To2.value == TransitionState1To2.TWO_TO_ONE ||
+                transition1To2.value == TransitionState1To2.ONE_TWO_REPEAT
+
+        return when {
+            routeToTimer0 && routeToTimer1 -> null
+            routeToTimer0 -> "timer0"
+            routeToTimer1 -> "timer1"
+            else -> null
+        }
     }
 
     private fun stopService(context: Context, coroutineScope: CoroutineScope) {

@@ -6,7 +6,7 @@
 - Keep the current runtime model where exactly one timer is active at a time.
 - Resolve timer chaining in `TimerViewModel`, not in the Compose layer or by introducing a second service.
 - Enforce the ambiguity rule that only one transition button may be in its `_REPEAT` state at a time; the most recently tapped button wins.
-- Preserve each timer’s existing `↻` configuration in storage and edit UI, but ignore self-repeat at runtime when an outgoing transition applies.
+- Continue to preserve each timer’s existing `↻` configuration in storage and edit UI, but ignore self-repeat at runtime when an outgoing transition applies.
 - Distinguish manual starts from transition-triggered starts so chained starts can suppress the initial small alert.
 - Keep chained handoffs immediate with no explicit buffer or delay between timers.
 - Add JVM regression coverage for transition persistence, chaining resolution, repeat precedence, and chained alert suppression.

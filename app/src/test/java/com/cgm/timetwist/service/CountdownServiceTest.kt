@@ -41,23 +41,14 @@ class CountdownServiceTest {
     }
 
     @Test
-    fun `onStartCommand should create foreground state without crashing`() = runTest {
-        val serviceController = Robolectric.buildService(CountdownService::class.java).create()
-        val service = serviceController.get()
+    fun `manual starts should emit the initial small alert`() = runTest {
+        val service = createServiceHarness(backgroundScope).service
         val alerter = RecordingTimerAlerter()
-        val clock = MutableClock(now = 1_000L)
         service.timerAlerter = alerter
-        service.timeProvider = { clock.now }
-        service.serviceScope = backgroundScope
+        service.timeProvider = { 1_000L }
 
         val result = service.onStartCommand(
-            Intent(application, CountdownService::class.java)
-                .putExtra("startTime", 1_000L)
-                .putExtra("durationMillis", 35_000L)
-                .putExtra("repeating", false)
-                .putExtra("sound", true)
-                .putExtra("vibration", true)
-                .putExtra("intervalStuff", true),
+            countdownIntent(startTime = 1_000L, suppressStartAlert = false),
             0,
             1,
         )
@@ -71,35 +62,65 @@ class CountdownServiceTest {
     }
 
     @Test
-    fun `service should emit final alert when countdown reaches zero`() = runTest {
-        val serviceController = Robolectric.buildService(CountdownService::class.java).create()
-        val service = serviceController.get()
+    fun `transition starts should suppress the initial small alert`() = runTest {
+        val service = createServiceHarness(backgroundScope).service
         val alerter = RecordingTimerAlerter()
-        val clock = MutableClock(now = 5_000L)
         service.timerAlerter = alerter
-        service.timeProvider = { clock.now }
-        service.serviceScope = backgroundScope
+        service.timeProvider = { 1_000L }
 
         service.onStartCommand(
-            Intent(application, CountdownService::class.java)
-                .putExtra("startTime", 5_000L)
-                .putExtra("durationMillis", 2_000L)
-                .putExtra("sound", false)
-                .putExtra("vibration", false)
-                .putExtra("intervalStuff", false),
+            countdownIntent(startTime = 1_000L, suppressStartAlert = true),
             0,
             1,
         )
         runCurrent()
 
-        clock.now = 7_000L
-        advanceTimeBy(1_000L)
-        runCurrent()
-
-        assertThat(alerter.bigAlerts).isGreaterThanOrEqualTo(1)
+        assertThat(alerter.smallAlerts).isEqualTo(0)
     }
 
-    private class MutableClock(var now: Long)
+    @Test
+    fun `service should emit completion alert before teardown alert`() = runTest {
+        val harness = createServiceHarness(backgroundScope)
+        val service = harness.service
+        val alerter = RecordingTimerAlerter()
+        service.timerAlerter = alerter
+        assertThat(alerter.bigAlerts).isEqualTo(0)
+
+        service.emitCompletionAlert()
+        assertThat(alerter.bigAlerts).isEqualTo(1)
+
+        harness.controller.destroy()
+        assertThat(alerter.bigAlerts).isEqualTo(2)
+    }
+
+    private fun createServiceHarness(scope: kotlinx.coroutines.CoroutineScope): ServiceHarness {
+        val serviceController = Robolectric.buildService(CountdownService::class.java).create()
+        val service = serviceController.get().also { it.serviceScope = scope }
+        return ServiceHarness(controller = serviceController, service = service)
+    }
+
+    private fun countdownIntent(
+        startTime: Long,
+        durationMillis: Long = 35_000L,
+        sound: Boolean = true,
+        vibration: Boolean = true,
+        intervalStuff: Boolean = true,
+        suppressStartAlert: Boolean,
+    ): Intent {
+        return Intent(application, CountdownService::class.java)
+            .putExtra("startTime", startTime)
+            .putExtra("durationMillis", durationMillis)
+            .putExtra("repeating", false)
+            .putExtra("sound", sound)
+            .putExtra("vibration", vibration)
+            .putExtra("intervalStuff", intervalStuff)
+            .putExtra("suppressStartAlert", suppressStartAlert)
+    }
+
+    private data class ServiceHarness(
+        val controller: org.robolectric.android.controller.ServiceController<CountdownService>,
+        val service: CountdownService,
+    )
 
     private class RecordingTimerAlerter : TimerAlerter {
         var smallAlerts = 0

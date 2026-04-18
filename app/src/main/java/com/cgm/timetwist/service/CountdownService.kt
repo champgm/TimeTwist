@@ -93,6 +93,7 @@ class CountdownService : Service() {
     private var sound = false
     private var vibration = false
     private var intervalStuff = false
+    private var suppressStartAlert = false
     private var cancelled = false
     private var durationMillis = 0L
     private lateinit var vibrator: Vibrator
@@ -143,10 +144,15 @@ class CountdownService : Service() {
         }
     }
 
+    internal fun emitCompletionAlert() {
+        alertDevice(0)
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         sound = intent?.getBooleanExtra("sound", false) ?: false
         vibration = intent?.getBooleanExtra("vibration", false) ?: false
         intervalStuff = intent?.getBooleanExtra("intervalStuff", false) ?: false
+        suppressStartAlert = intent?.getBooleanExtra("suppressStartAlert", false) ?: false
         durationMillis = intent?.getLongExtra("durationMillis", 0L) ?: 0L
         val startTime = intent?.getLongExtra("startTime", 0L) ?: 0L
         var currentTime: Long
@@ -164,7 +170,9 @@ class CountdownService : Service() {
 
         serviceScope.launch {
             cancelled = false
-            smallAlert()
+            if (!suppressStartAlert) {
+                smallAlert()
+            }
             updateStatus(timeRemaining)
             try {
                 while (timeRemaining > COUNTDOWN_TICK_MILLIS && !cancelled) {
@@ -175,7 +183,7 @@ class CountdownService : Service() {
                 }
 
                 if (!cancelled) {
-                    alertDevice(0)
+                    emitCompletionAlert()
                 }
             } finally {
                 stopSelf()
