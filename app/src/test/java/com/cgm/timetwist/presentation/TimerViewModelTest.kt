@@ -87,7 +87,7 @@ class TimerViewModelTest {
             ),
         )
         saveTransitionState0To2(context, TransitionState0To2.TWO_TO_ZERO)
-        saveTransitionState1To2(context, TransitionState1To2.ONE_TWO_REPEAT)
+        saveTransitionState1To2(context, TransitionState1To2.ONE_TO_TWO)
 
         val viewModel = createViewModel(this)
 
@@ -97,7 +97,7 @@ class TimerViewModelTest {
         assertThat(viewModel.timer1.value.sound).isFalse()
         assertThat(viewModel.timer1.value.intervalStuff).isFalse()
         assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.TWO_TO_ZERO)
-        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.ONE_TWO_REPEAT)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.ONE_TO_TWO)
     }
 
     @Test
@@ -112,6 +112,32 @@ class TimerViewModelTest {
 
         assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.DEFAULT)
         assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.DEFAULT)
+    }
+
+    @Test
+    fun `constructor should repair persisted directional dual exit from timer2`() = runTest {
+        saveTransitionState0To2(context, TransitionState0To2.TWO_TO_ZERO)
+        saveTransitionState1To2(context, TransitionState1To2.TWO_TO_ONE)
+
+        val viewModel = createViewModel(this)
+
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.DEFAULT)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.DEFAULT)
+        assertThat(getTransitionState0To2(context)).isEqualTo(TransitionState0To2.DEFAULT)
+        assertThat(getTransitionState1To2(context)).isEqualTo(TransitionState1To2.DEFAULT)
+    }
+
+    @Test
+    fun `constructor should repair persisted repeat dual exit from timer2`() = runTest {
+        saveTransitionState0To2(context, TransitionState0To2.ZERO_TWO_REPEAT)
+        saveTransitionState1To2(context, TransitionState1To2.ONE_TWO_REPEAT)
+
+        val viewModel = createViewModel(this)
+
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.DEFAULT)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.DEFAULT)
+        assertThat(getTransitionState0To2(context)).isEqualTo(TransitionState0To2.DEFAULT)
+        assertThat(getTransitionState1To2(context)).isEqualTo(TransitionState1To2.DEFAULT)
     }
 
     @Test
@@ -249,6 +275,118 @@ class TimerViewModelTest {
         assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.DEFAULT)
         assertThat(getTransitionState0To2(context)).isEqualTo(TransitionState0To2.ZERO_TWO_REPEAT)
         assertThat(getTransitionState1To2(context)).isEqualTo(TransitionState1To2.DEFAULT)
+    }
+
+    @Test
+    fun `setting two to zero should reset existing two to one`() = runTest {
+        val viewModel = createViewModel(this)
+
+        viewModel.updateTransition1To2(TransitionState1To2.TWO_TO_ONE)
+        viewModel.updateTransition0To2(TransitionState0To2.TWO_TO_ZERO)
+
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.TWO_TO_ZERO)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.DEFAULT)
+        assertThat(getTransitionState0To2(context)).isEqualTo(TransitionState0To2.TWO_TO_ZERO)
+        assertThat(getTransitionState1To2(context)).isEqualTo(TransitionState1To2.DEFAULT)
+    }
+
+    @Test
+    fun `setting two to one should reset existing two to zero`() = runTest {
+        val viewModel = createViewModel(this)
+
+        viewModel.updateTransition0To2(TransitionState0To2.TWO_TO_ZERO)
+        viewModel.updateTransition1To2(TransitionState1To2.TWO_TO_ONE)
+
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.DEFAULT)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.TWO_TO_ONE)
+        assertThat(getTransitionState0To2(context)).isEqualTo(TransitionState0To2.DEFAULT)
+        assertThat(getTransitionState1To2(context)).isEqualTo(TransitionState1To2.TWO_TO_ONE)
+    }
+
+    @Test
+    fun `setting zero two repeat should reset existing two to one`() = runTest {
+        val viewModel = createViewModel(this)
+
+        viewModel.updateTransition1To2(TransitionState1To2.TWO_TO_ONE)
+        viewModel.updateTransition0To2(TransitionState0To2.ZERO_TWO_REPEAT)
+
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.ZERO_TWO_REPEAT)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.DEFAULT)
+    }
+
+    @Test
+    fun `setting one two repeat should reset existing two to zero`() = runTest {
+        val viewModel = createViewModel(this)
+
+        viewModel.updateTransition0To2(TransitionState0To2.TWO_TO_ZERO)
+        viewModel.updateTransition1To2(TransitionState1To2.ONE_TWO_REPEAT)
+
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.DEFAULT)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.ONE_TWO_REPEAT)
+    }
+
+    @Test
+    fun `cycling transition0 into two to zero should reset existing two to one`() = runTest {
+        val viewModel = createViewModel(this)
+        viewModel.updateTransition1To2(TransitionState1To2.TWO_TO_ONE)
+
+        viewModel.cycleTransition0To2()
+        viewModel.cycleTransition0To2()
+
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.TWO_TO_ZERO)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.DEFAULT)
+    }
+
+    @Test
+    fun `cycling transition1 into two to one should reset existing two to zero`() = runTest {
+        val viewModel = createViewModel(this)
+        viewModel.updateTransition0To2(TransitionState0To2.TWO_TO_ZERO)
+
+        viewModel.cycleTransition1To2()
+        viewModel.cycleTransition1To2()
+
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.DEFAULT)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.TWO_TO_ONE)
+    }
+
+    @Test
+    fun `cycling into repeat should still reset older conflicting button`() = runTest {
+        val viewModel = createViewModel(this)
+        viewModel.updateTransition0To2(TransitionState0To2.TWO_TO_ZERO)
+
+        viewModel.cycleTransition1To2()
+        viewModel.cycleTransition1To2()
+        viewModel.cycleTransition1To2()
+
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.DEFAULT)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.ONE_TWO_REPEAT)
+    }
+
+    @Test
+    fun `inward only combination should remain valid`() = runTest {
+        val viewModel = createViewModel(this)
+
+        viewModel.updateTransition0To2(TransitionState0To2.ZERO_TO_TWO)
+        viewModel.updateTransition1To2(TransitionState1To2.ONE_TO_TWO)
+
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.ZERO_TO_TWO)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.ONE_TO_TWO)
+    }
+
+    @Test
+    fun `one sided timer2 exit should remain until later conflicting tap`() = runTest {
+        val viewModel = createViewModel(this)
+
+        viewModel.updateTransition0To2(TransitionState0To2.TWO_TO_ZERO)
+        viewModel.updateTransition1To2(TransitionState1To2.ONE_TO_TWO)
+
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.TWO_TO_ZERO)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.ONE_TO_TWO)
+
+        viewModel.updateTransition1To2(TransitionState1To2.TWO_TO_ONE)
+
+        assertThat(viewModel.transition0To2.value).isEqualTo(TransitionState0To2.DEFAULT)
+        assertThat(viewModel.transition1To2.value).isEqualTo(TransitionState1To2.TWO_TO_ONE)
     }
 
     @Test

@@ -33,6 +33,12 @@ enum class TransitionState1To2 {
     ONE_TWO_REPEAT,
 }
 
+private enum class TransitionUpdateSource {
+    TRANSITION_0_2,
+    TRANSITION_1_2,
+    STARTUP_REPAIR,
+}
+
 internal data class TimerServiceRequest(
     val startTime: Long,
     val durationMillis: Long,
@@ -204,8 +210,15 @@ class TimerViewModel internal constructor(
                 }
             }
         }
-        transition0To2.value = getTransitionState0To2(context)
-        transition1To2.value = getTransitionState1To2(context)
+        val normalizedTransitions = normalizeTransitionStates(
+            state0To2 = getTransitionState0To2(context),
+            state1To2 = getTransitionState1To2(context),
+            source = TransitionUpdateSource.STARTUP_REPAIR,
+        )
+        transition0To2.value = normalizedTransitions.first
+        transition1To2.value = normalizedTransitions.second
+        saveTransitionState0To2(context, transition0To2.value)
+        saveTransitionState1To2(context, transition1To2.value)
     }
 
     private fun startTimers() {
@@ -319,22 +332,62 @@ class TimerViewModel internal constructor(
 
     internal fun updateTransition0To2(newState: TransitionState0To2) {
         val context = getApplication<Application>().applicationContext
-        transition0To2.value = newState
-        if (newState == TransitionState0To2.ZERO_TWO_REPEAT) {
-            transition1To2.value = TransitionState1To2.DEFAULT
-            saveTransitionState1To2(context, transition1To2.value)
-        }
+        val normalizedTransitions = normalizeTransitionStates(
+            state0To2 = newState,
+            state1To2 = transition1To2.value,
+            source = TransitionUpdateSource.TRANSITION_0_2,
+        )
+        transition0To2.value = normalizedTransitions.first
+        transition1To2.value = normalizedTransitions.second
         saveTransitionState0To2(context, transition0To2.value)
+        saveTransitionState1To2(context, transition1To2.value)
     }
 
     internal fun updateTransition1To2(newState: TransitionState1To2) {
         val context = getApplication<Application>().applicationContext
-        transition1To2.value = newState
-        if (newState == TransitionState1To2.ONE_TWO_REPEAT) {
-            transition0To2.value = TransitionState0To2.DEFAULT
-            saveTransitionState0To2(context, transition0To2.value)
-        }
+        val normalizedTransitions = normalizeTransitionStates(
+            state0To2 = transition0To2.value,
+            state1To2 = newState,
+            source = TransitionUpdateSource.TRANSITION_1_2,
+        )
+        transition0To2.value = normalizedTransitions.first
+        transition1To2.value = normalizedTransitions.second
+        saveTransitionState0To2(context, transition0To2.value)
         saveTransitionState1To2(context, transition1To2.value)
+    }
+
+    private fun pointsAwayFromTimer2(state: TransitionState0To2): Boolean {
+        return state == TransitionState0To2.TWO_TO_ZERO ||
+            state == TransitionState0To2.ZERO_TWO_REPEAT
+    }
+
+    private fun pointsAwayFromTimer2(state: TransitionState1To2): Boolean {
+        return state == TransitionState1To2.TWO_TO_ONE ||
+            state == TransitionState1To2.ONE_TWO_REPEAT
+    }
+
+    private fun normalizeTransitionStates(
+        state0To2: TransitionState0To2,
+        state1To2: TransitionState1To2,
+        source: TransitionUpdateSource,
+    ): Pair<TransitionState0To2, TransitionState1To2> {
+        val repeatConflict =
+            state0To2 == TransitionState0To2.ZERO_TWO_REPEAT &&
+                state1To2 == TransitionState1To2.ONE_TWO_REPEAT
+        val dualExitConflict =
+            pointsAwayFromTimer2(state0To2) &&
+                pointsAwayFromTimer2(state1To2)
+
+        if (!repeatConflict && !dualExitConflict) {
+            return state0To2 to state1To2
+        }
+
+        return when (source) {
+            TransitionUpdateSource.TRANSITION_0_2 -> state0To2 to TransitionState1To2.DEFAULT
+            TransitionUpdateSource.TRANSITION_1_2 -> TransitionState0To2.DEFAULT to state1To2
+            TransitionUpdateSource.STARTUP_REPAIR ->
+                TransitionState0To2.DEFAULT to TransitionState1To2.DEFAULT
+        }
     }
 
     private fun startTimer(
