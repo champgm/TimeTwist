@@ -91,8 +91,8 @@ fun TransitionButton1To2(
                 strokeWidth = strokeWidth,
                 cap = StrokeCap.Round,
             )
-            TransitionState1To2.ONE_TO_TWO -> drawHorizontalArrow(lineColor, strokeWidth, ArrowDirection.LEFT)
-            TransitionState1To2.TWO_TO_ONE -> drawHorizontalArrow(lineColor, strokeWidth, ArrowDirection.RIGHT)
+            TransitionState1To2.ONE_TO_TWO -> drawHorizontalArrow(lineColor, strokeWidth, ArrowDirection.RIGHT)
+            TransitionState1To2.TWO_TO_ONE -> drawHorizontalArrow(lineColor, strokeWidth, ArrowDirection.LEFT)
             TransitionState1To2.ONE_TWO_REPEAT -> {
                 drawHorizontalArrow(lineColor, strokeWidth, ArrowDirection.LEFT)
                 drawHorizontalArrow(lineColor, strokeWidth, ArrowDirection.RIGHT)
