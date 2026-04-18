@@ -1,6 +1,9 @@
 package com.cgm.timetwist.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
@@ -10,9 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
 import com.cgm.timetwist.presentation.TransitionState0To2
 import com.cgm.timetwist.presentation.TransitionState1To2
 import kotlin.math.PI
@@ -23,6 +25,7 @@ import kotlin.math.sin
 fun TransitionButton0To2(
     state: TransitionState0To2,
     onClick: () -> Unit,
+    enabled: Boolean,
     modifier: Modifier = Modifier,
     buttonSize: Dp,
     backgroundColor: Color,
@@ -34,6 +37,7 @@ fun TransitionButton0To2(
         modifier = modifier,
         buttonSize = buttonSize,
         backgroundColor = backgroundColor,
+        enabled = enabled,
         onClick = onClick,
     ) {
         val strokeWidth = lineWidth.toPx()
@@ -64,6 +68,7 @@ fun TransitionButton0To2(
 fun TransitionButton1To2(
     state: TransitionState1To2,
     onClick: () -> Unit,
+    enabled: Boolean,
     modifier: Modifier = Modifier,
     buttonSize: Dp,
     backgroundColor: Color,
@@ -75,6 +80,7 @@ fun TransitionButton1To2(
         modifier = modifier,
         buttonSize = buttonSize,
         backgroundColor = backgroundColor,
+        enabled = enabled,
         onClick = onClick,
     ) {
         val strokeWidth = lineWidth.toPx()
@@ -106,14 +112,22 @@ private fun TransitionButtonFrame(
     modifier: Modifier,
     buttonSize: Dp,
     backgroundColor: Color,
+    enabled: Boolean,
     onClick: () -> Unit,
     content: DrawScope.() -> Unit,
 ) {
-    Button(
-        onClick = onClick,
-        modifier = modifier.size(buttonSize),
-        shape = CircleShape,
-        colors = ButtonDefaults.buttonColors(backgroundColor = backgroundColor),
+    Box(
+        modifier = modifier
+            .size(buttonSize)
+            .clip(CircleShape)
+            .background(backgroundColor)
+            .then(
+                if (enabled) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                }
+            ),
     ) {
         Canvas(modifier = Modifier.size(buttonSize)) {
             content()

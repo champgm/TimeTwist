@@ -11,6 +11,9 @@
 - If a tap would create two outgoing arrows from `timer2`, the newly tapped button wins and the older conflicting button resets to `DEFAULT`.
 - Only one transition button may remain in a `_REPEAT` state after any tap sequence.
 - If a tap would place both buttons in `_REPEAT`, the same newest-tap-wins rule applies and the other resets to `DEFAULT`.
+- Both transition indicators remain visible on the main watch face in edit mode, including `DEFAULT`.
+- Regular mode shows only non-default transition indicators.
+- Regular-mode transition indicators are non-interactive; transition indicators are only interactive while global edit mode is active.
 - Timer chaining is resolved in `TimerViewModel` when a running timer completes.
 - If a completed timer has an outgoing transition, that transition takes precedence over the timer's saved self-repeat setting.
 - Saved per-timer `↻` settings are not rewritten by chaining logic.

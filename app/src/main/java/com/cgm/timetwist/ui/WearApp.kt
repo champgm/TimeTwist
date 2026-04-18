@@ -31,6 +31,8 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
+import com.cgm.timetwist.presentation.TransitionState0To2
+import com.cgm.timetwist.presentation.TransitionState1To2
 import com.cgm.timetwist.presentation.TimerViewModel
 import com.cgm.timetwist.presentation.black
 import com.cgm.timetwist.presentation.buttonPadding
@@ -96,8 +98,16 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
         val transitionLineWidth = 2.5.dp
         val backgroundColor = if (darkMode) mutedWhite else black
         val timerTextColor = if (darkMode) white else black
-        val transitionButtonBackground = if (darkMode) black else mutedWhite
+        val transitionButtonBackground = when {
+            darkMode -> black
+            inEditMode -> mutedGoogleRed
+            else -> googleRed
+        }
         val transitionButtonLine = if (darkMode) white else black
+        val showTransition0To2 = inEditMode ||
+            timerViewModel.transition0To2.value != TransitionState0To2.DEFAULT
+        val showTransition1To2 = inEditMode ||
+            timerViewModel.transition1To2.value != TransitionState1To2.DEFAULT
 
         BoxWithConstraints(
             modifier = Modifier
@@ -232,10 +242,11 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                 }
             }
 
-            if (inEditMode) {
+            if (showTransition0To2) {
                 TransitionButton0To2(
                     state = timerViewModel.transition0To2.value,
                     onClick = timerViewModel::cycleTransition0To2,
+                    enabled = inEditMode,
                     modifier = Modifier
                         .align(Alignment.Center)
                         .offset(x = maxWidth / 4),
@@ -244,9 +255,12 @@ fun WearApp(context: Context, navController: NavController, timerViewModel: Time
                     lineColor = transitionButtonLine,
                     lineWidth = transitionLineWidth,
                 )
+            }
+            if (showTransition1To2) {
                 TransitionButton1To2(
                     state = timerViewModel.transition1To2.value,
                     onClick = timerViewModel::cycleTransition1To2,
+                    enabled = inEditMode,
                     modifier = Modifier
                         .align(Alignment.Center)
                         .offset(y = maxHeight / 4),
