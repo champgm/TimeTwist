@@ -1,0 +1,4 @@
+interface:
+  display_name: "Time Plan"
+  short_description: "Generate phased implementation plans"
+  default_prompt: "Use $time-plan with PLAN_NAME=<name> to generate phased implementation files under notes/<PLAN_NAME>/."

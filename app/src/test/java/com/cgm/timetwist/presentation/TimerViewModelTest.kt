@@ -199,6 +199,9 @@ class TimerViewModelTest {
         assertThat(request.vibration).isTrue()
         assertThat(request.intervalStuff).isTrue()
         assertThat(request.suppressStartAlert).isFalse()
+        assertThat(getActiveTimerState(context)).isEqualTo(
+            ActiveTimerState(timerId = "timer1", startTime = 10_000L),
+        )
     }
 
     @Test
@@ -213,6 +216,65 @@ class TimerViewModelTest {
         assertThat(viewModel.timer1.value.started).isFalse()
         assertThat(viewModel.timer2.value.started).isFalse()
         assertThat(serviceController.stopCalls).isEqualTo(2)
+        assertThat(getActiveTimerState(context)).isNull()
+    }
+
+    @Test
+    fun `constructor should restore a still active timer from persisted runtime state`() = runTest {
+        val clock = MutableClock(now = 12_000L)
+        saveTimerDetails(
+            context = context,
+            timerId = "timer2",
+            details = TimeDetails(
+                timerId = "timer2",
+                durationMillis = 10_000L,
+                repeating = false,
+                vibration = true,
+                sound = true,
+                intervalStuff = true,
+            ),
+        )
+        saveActiveTimerState(
+            context = context,
+            state = ActiveTimerState(timerId = "timer2", startTime = 5_000L),
+        )
+
+        val viewModel = createViewModel(this, clock)
+
+        assertActiveTimer(viewModel, "timer2")
+        assertThat(viewModel.timer2.value.startTime).isEqualTo(5_000L)
+        assertThat(viewModel.timer2.value.elapsedTime).isEqualTo(7_000L)
+        assertThat(viewModel.timer2.value.timeRemaining).isEqualTo(3_000L)
+    }
+
+    @Test
+    fun `constructor should clear expired persisted runtime state and stop the service`() = runTest {
+        val clock = MutableClock(now = 15_000L)
+        val serviceController = RecordingTimerServiceController()
+        saveTimerDetails(
+            context = context,
+            timerId = "timer0",
+            details = TimeDetails(
+                timerId = "timer0",
+                durationMillis = 4_000L,
+                repeating = false,
+                vibration = true,
+                sound = false,
+                intervalStuff = true,
+            ),
+        )
+        saveActiveTimerState(
+            context = context,
+            state = ActiveTimerState(timerId = "timer0", startTime = 5_000L),
+        )
+
+        val viewModel = createViewModel(this, clock, serviceController)
+
+        assertThat(viewModel.timer0.value.started).isFalse()
+        assertThat(viewModel.timer1.value.started).isFalse()
+        assertThat(viewModel.timer2.value.started).isFalse()
+        assertThat(getActiveTimerState(context)).isNull()
+        assertThat(serviceController.stopCalls).isEqualTo(1)
     }
 
     @Test
@@ -411,6 +473,7 @@ class TimerViewModelTest {
         assertThat(viewModel.timer0.value.timeRemaining).isLessThanOrEqualTo(0L)
         assertThat(serviceController.startRequests).hasSize(1)
         assertThat(serviceController.stopCalls).isEqualTo(2)
+        assertThat(getActiveTimerState(context)).isNull()
     }
 
     @Test
@@ -458,6 +521,7 @@ class TimerViewModelTest {
         assertThat(serviceController.startRequests).hasSize(2)
         assertThat(serviceController.startRequests.last().durationMillis).isEqualTo(viewModel.timer2.value.durationMillis)
         assertThat(serviceController.startRequests.last().suppressStartAlert).isTrue()
+        assertThat(getActiveTimerState(context)?.timerId).isEqualTo("timer2")
     }
 
     @Test

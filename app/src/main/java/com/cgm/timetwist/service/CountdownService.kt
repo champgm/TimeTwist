@@ -22,6 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 internal const val SMALL_ALERT_INTERVAL_SECONDS = 5L
 internal const val BIG_ALERT_INTERVAL_SECONDS = 15L
@@ -58,9 +59,9 @@ internal fun formatCountdownTime(millis: Long): String {
     val seconds = totalSeconds % 60
 
     return if (hours > 0) {
-        String.format("%02d:%02d:%02d", hours, minutes, seconds)
+        String.format(Locale.US, "%02d:%02d:%02d", hours, minutes, seconds)
     } else {
-        String.format("%02d:%02d", minutes, seconds)
+        String.format(Locale.US, "%02d:%02d", minutes, seconds)
     }
 }
 
@@ -98,6 +99,8 @@ class CountdownService : Service() {
     private var durationMillis = 0L
     private lateinit var vibrator: Vibrator
     private var ongoingActivity: OngoingActivity? = null
+    private var shouldDestroyAlert = false
+    private var foregroundNotificationActive = false
     internal var timeProvider: () -> Long = System::currentTimeMillis
     internal var timerAlerter: TimerAlerter = DeviceTimerAlerter
     internal var serviceScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
@@ -149,6 +152,14 @@ class CountdownService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent == null) {
+            cancelled = true
+            shouldDestroyAlert = false
+            stopForegroundAndRemoveNotification()
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         sound = intent?.getBooleanExtra("sound", false) ?: false
         vibration = intent?.getBooleanExtra("vibration", false) ?: false
         intervalStuff = intent?.getBooleanExtra("intervalStuff", false) ?: false
@@ -166,10 +177,19 @@ class CountdownService : Service() {
         }
 
         updateTimes()
-        setupOngoingActivity(durationMillis)
+        if (durationMillis <= 0L || timeRemaining <= 0L) {
+            cancelled = true
+            shouldDestroyAlert = false
+            stopForegroundAndRemoveNotification()
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
+        cancelled = false
+        shouldDestroyAlert = true
+        setupOngoingActivity(timeRemaining)
 
         serviceScope.launch {
-            cancelled = false
             if (!suppressStartAlert) {
                 smallAlert()
             }
@@ -184,13 +204,15 @@ class CountdownService : Service() {
 
                 if (!cancelled) {
                     emitCompletionAlert()
+                    shouldDestroyAlert = false
                 }
             } finally {
+                stopForegroundAndRemoveNotification()
                 stopSelf()
             }
         }
 
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -198,11 +220,14 @@ class CountdownService : Service() {
     }
 
     override fun onDestroy() {
-        bigAlert()
-        super.onDestroy()
-        durationMillis = 0
         cancelled = true
-        ongoingActivity = null
+        stopForegroundAndRemoveNotification()
+        if (shouldDestroyAlert) {
+            bigAlert()
+        }
+        super.onDestroy()
+        durationMillis = 0L
+        shouldDestroyAlert = false
     }
 
     private fun createNotificationChannel() {
@@ -224,6 +249,7 @@ class CountdownService : Service() {
         val notification = notificationBuilder.build()
 
         startForeground(NOTIFICATION_ID, notification)
+        foregroundNotificationActive = true
 
         val icon: Icon = Icon.createWithResource(applicationContext, R.drawable.timer_outline)
         val ongoingActivityBuilder =
@@ -234,6 +260,17 @@ class CountdownService : Service() {
         ongoingActivity = ongoingActivityBuilder.build()
         ongoingActivity?.apply(applicationContext)
         updateStatus(initialDurationMillis)
+    }
+
+    private fun stopForegroundAndRemoveNotification() {
+        if (foregroundNotificationActive) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            val notificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.cancel(NOTIFICATION_ID)
+        }
+        foregroundNotificationActive = false
+        ongoingActivity = null
     }
 
     private fun createNotificationBuilder(): NotificationCompat.Builder {

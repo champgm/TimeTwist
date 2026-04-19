@@ -1,6 +1,7 @@
 package com.cgm.timetwist.service
 
 import android.app.Application
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
@@ -53,12 +54,47 @@ class CountdownServiceTest {
             1,
         )
 
-        assertThat(result).isEqualTo(Service.START_STICKY)
+        assertThat(result).isEqualTo(Service.START_NOT_STICKY)
         assertThat(shadowOf(service).lastForegroundNotification).isNotNull()
         assertThat(shadowOf(service).lastForegroundNotificationId).isEqualTo(83210)
 
         runCurrent()
         assertThat(alerter.smallAlerts).isEqualTo(1)
+    }
+
+    @Test
+    fun `null intent restart should not publish a foreground notification`() = runTest {
+        val service = createServiceHarness(backgroundScope).service
+        val alerter = RecordingTimerAlerter()
+        service.timerAlerter = alerter
+
+        val result = service.onStartCommand(null, 0, 1)
+
+        assertThat(result).isEqualTo(Service.START_NOT_STICKY)
+        assertThat(shadowOf(service).lastForegroundNotification).isNull()
+        runCurrent()
+        assertThat(alerter.smallAlerts).isEqualTo(0)
+        assertThat(alerter.bigAlerts).isEqualTo(0)
+    }
+
+    @Test
+    fun `expired start request should be rejected before foreground setup`() = runTest {
+        val service = createServiceHarness(backgroundScope).service
+        val alerter = RecordingTimerAlerter()
+        service.timerAlerter = alerter
+        service.timeProvider = { 10_000L }
+
+        val result = service.onStartCommand(
+            countdownIntent(startTime = 1_000L, durationMillis = 1_000L, suppressStartAlert = false),
+            0,
+            1,
+        )
+
+        assertThat(result).isEqualTo(Service.START_NOT_STICKY)
+        assertThat(shadowOf(service).lastForegroundNotification).isNull()
+        runCurrent()
+        assertThat(alerter.smallAlerts).isEqualTo(0)
+        assertThat(alerter.bigAlerts).isEqualTo(0)
     }
 
     @Test
@@ -79,7 +115,7 @@ class CountdownServiceTest {
     }
 
     @Test
-    fun `service should emit completion alert before teardown alert`() = runTest {
+    fun `service should emit a completion alert without a second destroy alert`() = runTest {
         val harness = createServiceHarness(backgroundScope)
         val service = harness.service
         val alerter = RecordingTimerAlerter()
@@ -90,7 +126,27 @@ class CountdownServiceTest {
         assertThat(alerter.bigAlerts).isEqualTo(1)
 
         harness.controller.destroy()
-        assertThat(alerter.bigAlerts).isEqualTo(2)
+        assertThat(alerter.bigAlerts).isEqualTo(1)
+    }
+
+    @Test
+    fun `destroy should remove foreground notification after a valid start`() = runTest {
+        val harness = createServiceHarness(backgroundScope)
+        val service = harness.service
+        service.timeProvider = { 1_000L }
+
+        service.onStartCommand(
+            countdownIntent(startTime = 1_000L, suppressStartAlert = false),
+            0,
+            1,
+        )
+
+        val notificationManager = application.getSystemService(NotificationManager::class.java)
+        assertThat(shadowOf(notificationManager).allNotifications).isNotEmpty()
+
+        harness.controller.destroy()
+
+        assertThat(shadowOf(notificationManager).allNotifications).isEmpty()
     }
 
     private fun createServiceHarness(scope: kotlinx.coroutines.CoroutineScope): ServiceHarness {

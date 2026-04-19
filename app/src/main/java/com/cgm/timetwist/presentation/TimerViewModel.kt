@@ -18,6 +18,8 @@ import kotlin.coroutines.EmptyCoroutineContext
 private const val TIME_TWIST_PREFERENCES = "time_twist_preferences"
 private const val TRANSITION_0_2_KEY = "transition_0_2"
 private const val TRANSITION_1_2_KEY = "transition_1_2"
+private const val ACTIVE_TIMER_ID_KEY = "active_timer_id"
+private const val ACTIVE_TIMER_START_TIME_KEY = "active_timer_start_time"
 
 enum class TransitionState0To2 {
     DEFAULT,
@@ -78,6 +80,11 @@ internal object AndroidTimerServiceController : TimerServiceController {
     }
 }
 
+internal data class ActiveTimerState(
+    val timerId: String,
+    val startTime: Long,
+)
+
 fun saveTimerDetails(context: Context, timerId: String, details: TimeDetails) {
     val prefs = context.getSharedPreferences(TIME_TWIST_PREFERENCES, Context.MODE_PRIVATE)
     with(prefs.edit()) {
@@ -133,6 +140,32 @@ fun getTransitionState1To2(context: Context): TransitionState1To2 {
     val savedValue = prefs.getString(TRANSITION_1_2_KEY, null) ?: return TransitionState1To2.DEFAULT
     return TransitionState1To2.entries.firstOrNull { it.name == savedValue }
         ?: TransitionState1To2.DEFAULT
+}
+
+internal fun saveActiveTimerState(context: Context, state: ActiveTimerState) {
+    val prefs = context.getSharedPreferences(TIME_TWIST_PREFERENCES, Context.MODE_PRIVATE)
+    prefs.edit()
+        .putString(ACTIVE_TIMER_ID_KEY, state.timerId)
+        .putLong(ACTIVE_TIMER_START_TIME_KEY, state.startTime)
+        .apply()
+}
+
+internal fun getActiveTimerState(context: Context): ActiveTimerState? {
+    val prefs = context.getSharedPreferences(TIME_TWIST_PREFERENCES, Context.MODE_PRIVATE)
+    val timerId = prefs.getString(ACTIVE_TIMER_ID_KEY, null) ?: return null
+    val startTime = prefs.getLong(ACTIVE_TIMER_START_TIME_KEY, -1L)
+    if (timerId !in setOf("timer0", "timer1", "timer2") || startTime < 0L) {
+        return null
+    }
+    return ActiveTimerState(timerId = timerId, startTime = startTime)
+}
+
+internal fun clearActiveTimerState(context: Context) {
+    val prefs = context.getSharedPreferences(TIME_TWIST_PREFERENCES, Context.MODE_PRIVATE)
+    prefs.edit()
+        .remove(ACTIVE_TIMER_ID_KEY)
+        .remove(ACTIVE_TIMER_START_TIME_KEY)
+        .apply()
 }
 
 class TimerViewModel internal constructor(
@@ -219,6 +252,7 @@ class TimerViewModel internal constructor(
         transition1To2.value = normalizedTransitions.second
         saveTransitionState0To2(context, transition0To2.value)
         saveTransitionState1To2(context, transition1To2.value)
+        restoreActiveTimerFromPrefs(context)
     }
 
     private fun startTimers() {
@@ -258,9 +292,10 @@ class TimerViewModel internal constructor(
 
     fun stopTimers(context: Context) {
         stopService(context, cachedCoroutineScope)
+        clearActiveTimerState(context)
         listOf(timer0, timer1, timer2).forEach { timer ->
             if (timer.value.started) {
-                stopTimer(timer.value.timerId)
+                stopTimer(timer.value.timerId, clearPersistedState = false)
             }
         }
     }
@@ -291,12 +326,15 @@ class TimerViewModel internal constructor(
         )
     }
 
-    private fun stopTimer(timerId: String) {
+    private fun stopTimer(timerId: String, clearPersistedState: Boolean = true) {
         val timer = when (timerId) {
             "timer0" -> timer0
             "timer1" -> timer1
             "timer2" -> timer2
             else -> throw IllegalArgumentException("Invalid timerId")
+        }
+        if (clearPersistedState) {
+            clearActiveTimerState(getApplication<Application>().applicationContext)
         }
         timer.value = timer.value.copy(started = false)
     }
@@ -398,12 +436,17 @@ class TimerViewModel internal constructor(
     ) {
         cachedCoroutineScope = coroutineScope
         stopService(context, coroutineScope)
+        clearActiveTimerState(context)
         listOf(timer0, timer1, timer2).forEach { timer ->
             if (timer.value.timerId == startTimerId) {
                 val startTime = timeProvider()
                 timer.value = timer.value.copy(
                     startTime = startTime,
                     started = true
+                )
+                saveActiveTimerState(
+                    context = context,
+                    state = ActiveTimerState(timerId = startTimerId, startTime = startTime),
                 )
                 startService(
                     context = context,
@@ -418,7 +461,7 @@ class TimerViewModel internal constructor(
                 )
                 updateTimer(timer.value.timerId)
             } else {
-                stopTimer(timer.value.timerId)
+                stopTimer(timer.value.timerId, clearPersistedState = false)
             }
         }
     }
@@ -543,5 +586,42 @@ class TimerViewModel internal constructor(
     private fun stopService(context: Context, coroutineScope: CoroutineScope) {
         cachedCoroutineScope = coroutineScope
         timerServiceController.stop(context, coroutineScope)
+    }
+
+    private fun restoreActiveTimerFromPrefs(context: Context) {
+        val activeTimerState = getActiveTimerState(context) ?: return
+        val timer = getTimerState(activeTimerState.timerId)
+        val elapsedTime = timeProvider() - activeTimerState.startTime
+        val timeRemaining = timer.value.durationMillis - elapsedTime
+
+        if (timeRemaining <= 0L) {
+            clearActiveTimerState(context)
+            stopService(context, cachedCoroutineScope)
+            listOf(timer0, timer1, timer2).forEach {
+                it.value = it.value.copy(started = false)
+            }
+            return
+        }
+
+        listOf(timer0, timer1, timer2).forEach { candidate ->
+            candidate.value = candidate.value.copy(
+                started = candidate.value.timerId == activeTimerState.timerId,
+            )
+        }
+        timer.value = timer.value.copy(
+            startTime = activeTimerState.startTime,
+            elapsedTime = elapsedTime,
+            timeRemaining = timeRemaining,
+            started = true,
+        )
+    }
+
+    private fun getTimerState(timerId: String): MutableState<TimeDetails> {
+        return when (timerId) {
+            "timer0" -> timer0
+            "timer1" -> timer1
+            "timer2" -> timer2
+            else -> throw IllegalArgumentException("Invalid timerId")
+        }
     }
 }
