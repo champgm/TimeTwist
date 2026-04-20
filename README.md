@@ -13,6 +13,7 @@ You can find the app on the Play store here: https://play.google.com/store/apps/
 This is the main timer view:
 
 ![Main Screen](screenshots/01_main.png)
+![Main Screen With Transitions](screenshots/01b_main.png)
 
 After pressing the `Edit` button, tap a timer to edit:
 
@@ -25,6 +26,7 @@ In edit mode, select minutes or seconds and drag the slider to set the number:
 Now with dark mode:
 
 ![Dark Mode](screenshots/04_dark_mode.png)
+![Dark Mode With Transitions](screenshots/04b_dark_mode.png)
 
 
 ## ADB
