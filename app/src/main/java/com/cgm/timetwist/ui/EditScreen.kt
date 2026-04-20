@@ -59,16 +59,41 @@ fun EditScreen(timerId: String, navController: NavController, timerViewModel: Ti
     // The state for focused field
     var focusedField by remember { mutableStateOf(FocusedField.SECONDS) }
     val focusRequester: FocusRequester = remember { FocusRequester() }
-    val selectedColumn by remember { mutableIntStateOf(0) }
-    LaunchedEffect(selectedColumn) {
-        listOf(focusRequester)[selectedColumn]
-            .requestFocus()
+    var rotaryAccumulator by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(focusedField) {
+        focusRequester.requestFocus()
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colors.background),
+            .background(MaterialTheme.colors.background)
+            .onRotaryScrollEvent { event ->
+                if (focusedField == FocusedField.NONE) return@onRotaryScrollEvent false
+                val prev = when (focusedField) {
+                    FocusedField.SECONDS -> seconds
+                    FocusedField.MINUTES -> minutes
+                    FocusedField.NONE -> 0L
+                }
+                val (next, remainder) = applyRotaryDelta(
+                    current = prev,
+                    accumulatorPx = rotaryAccumulator,
+                    scrollPx = event.verticalScrollPixels,
+                )
+                rotaryAccumulator = remainder
+                when (focusedField) {
+                    FocusedField.SECONDS -> seconds = next
+                    FocusedField.MINUTES -> minutes = next
+                    FocusedField.NONE -> Unit
+                }
+                Log.d(
+                    "Rotary",
+                    "field=$focusedField raw=${event.verticalScrollPixels} delta=${next - prev}"
+                )
+                true
+            }
+            .focusRequester(focusRequester)
+            .focusable(),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -148,18 +173,7 @@ fun EditScreen(timerId: String, navController: NavController, timerViewModel: Ti
                             color = if (focusedField == FocusedField.SECONDS) Color.DarkGray else Color.Transparent,
                             shape = RoundedCornerShape(24.dp),
                         )
-                        .focusRequester(focusRequester)
-                        .focusable()
-                        .padding(12.dp)
-                        .onRotaryScrollEvent {
-                            Log.e("Rotary", "Got rotary scroll ${it.verticalScrollPixels}")
-                            if (focusedField == FocusedField.SECONDS) {
-                                seconds += it.verticalScrollPixels.toLong()
-                            } else if (focusedField == FocusedField.MINUTES) {
-                                minutes += it.verticalScrollPixels.toLong()
-                            }
-                            true
-                        },
+                        .padding(12.dp),
                 ) {
                     Text(secondsString, fontSize = fontSize)
                 }

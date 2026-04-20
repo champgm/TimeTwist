@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -169,6 +170,18 @@ fun CircularSlider(
         }
     }
 
+
+    LaunchedEffect(originalValue, sliderState.value.isInitialized) {
+        if (sliderState.value.isInitialized) {
+            val newOffset = timeValueToPosition(
+                originalValue,
+                sliderState.value.center,
+                sliderState.value.radius,
+                draggerRadiusPx.doubleValue,
+            )
+            draggerState.value = DraggerState(newOffset, true)
+        }
+    }
 
     Box( // The box containing the dragger
         modifier = Modifier            .fillMaxSize()
